@@ -20,8 +20,8 @@ class ModuleLoader {
     private $agentDirectory = "";
     /**
      * init
-     * @param string $agentDirectory 
-     * @return type
+     * @param  string $agentDirectory 
+     * @return object
      */
      public static function init($agentDirectory)
     {
@@ -58,7 +58,7 @@ class ModuleLoader {
             $className = substr($className, $lastNsPos + 1);
         }
         if ( strpos($namespace,'Module_')==0 ) {
-            $fileName  = $this->agentDirectory.str_replace('\\', DIRECTORY_SEPARATOR, $namespace) . DIRECTORY_SEPARATOR;
+            $fileName  = $this->agentDirectory.str_replace('\\', DIRECTORY_SEPARATOR, $namespace).DIRECTORY_SEPARATOR;
 //            $fileName .= str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php';   // rule psr-0
             $fileName .= $className.'.php';
             if (is_readable($fileName)) {

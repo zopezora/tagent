@@ -10,7 +10,6 @@ interface RefreshModuleInterface {
     /**
      * if open tag with attributes refresh='yes' , this method is called. 
      * @param  array $params 
-     * @return void
      */
     public function refresh(array $params);
 }

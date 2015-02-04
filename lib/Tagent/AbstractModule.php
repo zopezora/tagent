@@ -12,6 +12,7 @@ use Tagent\Agent;
 
 abstract class AbstractModule
 {
+    // --- Module Variable --------------------------------- 
     /**
      * get module variable
      * @param  string $key 
@@ -52,19 +53,19 @@ abstract class AbstractModule
         Agent::getInstance()->setVariablesByArray($array, $modulename);
     }
 
-    // ---- object locator ----
+    // ---- Module object locator -----------------------------
     /**
      * get
-     * @param string $name 
-     * @param string $modulename 
+     * @param  string $name 
+     * @param  string $modulename 
      * @return object|null
      */
-    public function get($name , $modulename = null)
+    final public function get($name , $modulename = null)
     {
         if (! isset($modulename)){
             $modulename = Agent::getInstance()->getModuleNameByObject($this);
         }
-        return Agent::getInstance()->get($name,$modulename);
+        return Agent::getInstance()->get($name, $modulename);
     }
     /**
      * set object
@@ -73,7 +74,7 @@ abstract class AbstractModule
      * @param string $modulename
      * @return void
      */
-    public function set($name, $object, $modulename = null)
+    final public function set($name, $object, $modulename = null)
     {
         if (! isset($modulename)){
             $modulename = Agent::getInstance()->getModuleNameByObject($this);
@@ -86,7 +87,7 @@ abstract class AbstractModule
      * @param string $modulename
      * @return bool  true|false
      */
-    public function has($name, $modulename = null)
+    final public function has($name, $modulename = null)
     {
         if (! isset($modulename)){
             $modulename = Agent::getInstance()->getModuleNameByObject($this);

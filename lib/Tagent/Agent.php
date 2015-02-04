@@ -35,7 +35,7 @@ class Agent {
      */
     protected $loader = null;
     /**
-     * @var array    ['modulename']['instance']/['object']/['variables'] 
+     * @var array    ['modulename']['instance']/['objects']/['variables'] 
      */
     protected $modules = array();
     /**
@@ -55,9 +55,9 @@ class Agent {
     /**
      * initialize Agent return singleton instance. 
      * @static 
-     * @param array $config 
-     * @param object $loader    composer classloader 
-     * @return type
+     * @param  array $config 
+     * @param  object $loader    composer classloader 
+     * @return object
      */
     public static function init(array $config = array())
     {
@@ -131,7 +131,7 @@ class Agent {
     /**
      * set debug
      * @param  bool|string $bool  true|false  'on|off' / 'yes|no' / 'y|n'
-     * @return bool
+     * @return void
      */
     public function setDebug($bool)
     {
@@ -139,7 +139,6 @@ class Agent {
             $bool = $this->boolStr($bool, false);
         }
         $this->configs['debug'] = ($bool) ? true : false ;
-        return $this->configs['debug'];
     }
     /**
      * return debug setting boolean
@@ -185,9 +184,9 @@ class Agent {
     }
     /**
      * override set Variables by array  
-     * @param type array $array 
-     * @param type $module 
-     * @return type
+     * @param  array  $array 
+     * @param  string $module 
+     * @return void
      */
     public function setVariablesByArray(array $array, $module = 'GLOBAL')
     {
@@ -210,9 +209,9 @@ class Agent {
     }
     /**
      * set object
-     * @param string $name 
-     * @param object $object   if null , unset Object
-     * @param string $module
+     * @param  string $name 
+     * @param  object $object   if null , unset Object
+     * @param  string $module
      * @return void
      */
     public function set($name, $object, $module = 'GLOBAL')
@@ -232,9 +231,9 @@ class Agent {
     }
     /**
      * has object
-     * @param string $name 
-     * @param string $module 
-     * @return bool  true|false
+     * @param  string $name 
+     * @param  string $module 
+     * @return bool   true|false
      */
     public function has($name, $module = 'GLOBAL')
     {
@@ -265,8 +264,8 @@ class Agent {
     }
     /**
      * new open module
-     * @param string $module 
-     * @param array  $params 
+     * @param  string $module 
+     * @param  array  $params 
      * @return object
      */
     protected function newOpenModule($module, $params = array())
@@ -299,7 +298,7 @@ class Agent {
     }
     /**
      * return module instance
-     * @param array $module 
+     * @param  array $module 
      * @return object|false|null  false...already open but no instance / null...open yet
      */
     public function getModule($module, $tryopen = false)
@@ -314,8 +313,8 @@ class Agent {
     }
     /**
      * create module instance 
-     * @param string $module 
-     * @param array $params 
+     * @param  string $module 
+     * @param  array $params 
      * @return object|false
      */
     protected function createModule($module, $params = array())
@@ -365,9 +364,9 @@ class Agent {
     // method --------------------------------------------------------------------
     /**
      * call method return variables array
-     * @param string $method 
-     * @param string $module 
-     * @param array  $params 
+     * @param  string $method 
+     * @param  string $module 
+     * @param  array  $params 
      * @return array
      */
     public function getMethod($method, $module, $params)
@@ -377,9 +376,9 @@ class Agent {
     // loop --------------------------------------------------------------------
     /**
      * call loop return variable array
-     * @param string $loop 
-     * @param string $module 
-     * @param array  $params 
+     * @param  string $loop 
+     * @param  string $module 
+     * @param  array  $params 
      * @return array
      */
     public function getLoop($loop, $module, $params)
@@ -389,7 +388,7 @@ class Agent {
     // call --------------------------------------------------------------------
     /**
      * call method or loop & return variables.
-     * try  1.module method  2.create instance->getVariable  3.callable  4.return default empty
+     * try  1.module method  2.create instance->method  3.callable  4.return default empty
      * @param  string $kind    'method' / 'loop'
      * @param  string $name    method name / loop name
      * @param  string $module  module name
@@ -419,7 +418,7 @@ class Agent {
                 return (array) $instance($params);
             }
         }
-        $this->log('WARNING','Not Found call ('.$module.'->'.$methodname.')',$module);
+        $this->log('WARNING','Not Found call ('.$module.'->'.$methodname.')', $module);
         return $default;
     }
     // fetch & parse   --------------------------------------------------------------------
@@ -439,7 +438,7 @@ class Agent {
     }
     /**
      * display output buffer   
-     * @return type
+     * @return void
      */
     protected function bufferDisplay()
     {
@@ -453,7 +452,7 @@ class Agent {
     }
     /**
      * dispaly source.  if no source argument, display output buffer
-     * @param string $source 
+     * @param  string $source 
      * @return void
      */
     public function display($source = null)
@@ -492,7 +491,7 @@ class Agent {
         while (preg_match($pattern, $source, $matches, PREG_OFFSET_CAPTURE)) {
             $match = $matches[0][0]; // <tag></tag>
             $pos   = $matches[0][1]; // '<'' start posistion
-            $attr  = $matches[1][0]; // <tag $atr></tag>
+            $attr  = $matches[1][0]; // <tag $attr></tag>
             $inTag = $matches[2][0]; // <tag>$inTag</tag>
             $len   = strlen($match);
 
@@ -500,7 +499,7 @@ class Agent {
             $output .= $this->varFetch(substr($source, 0, $pos), $module, $methodVars, $loopVars);
 
             // inside Tag
-            // attr ['params'] / ['reserved'] / ['pushvar']
+            // attrs ['params'] / ['reserved'] / ['appends']
             $attrs = $this->attributeParse($attr, $module, $methodVars, $loopVars); 
             $reservd = $attrs['reserved'];
 
@@ -535,7 +534,7 @@ class Agent {
                 $inLoopVarsList = (isset($reservd["loop"]))
                                 ? $this->getLoop($reservd["loop"], $inModule, $attrs['params'])
                                 : array('noloop'=>$loopVars);
-                // normaly single / multi by loop vars
+                // normaly single / multi by loop vars / zero loop
                 foreach($inLoopVarsList as $key => $inLoopVars) {
                     $inLoopVars['LOOPKEY']=$key;
                     // recursive fetch
@@ -548,7 +547,7 @@ class Agent {
                 }
             } // end of if parse on/off
            // forward source
-            $source = substr($source,$pos+$len );
+            $source = substr($source, $pos+$len );
         } // end of while serch <tag>
 
         $output .= $this->varFetch($source, $module, $methodVars, $loopVars);
@@ -565,15 +564,14 @@ class Agent {
     }
     /**
      * parse tag attribute    ex. attr1="foo" attr2={@m:id|r@}
-     * @param string $source
-     * @param string $module
-     * @param array  $methodVars
-     * @param array  $loopVars
+     * @param  string $source
+     * @param  string $module
+     * @param  array  $methodVars
+     * @param  array  $loopVars
      * @return array
      */
     protected function attributeParse($source, $module, $methodVars, $loopVars)
     {
-        // attr1="foo" attr2=
         $attrs = array(
             'reserved' => array(
                 "module"        => null,
@@ -584,8 +582,8 @@ class Agent {
                 "loop"          => null,
                 "parse"         => null,
             ),
-            'params'  =>array(),
-            'appends'=>array(),
+            'params'  => array(),
+            'appends' => array(),
         );
         $pattern = "/(?:\"[^\"]*\"|'[^']*'|[^'\"\s]+)+/";
         if (preg_match_all( $pattern,$source,$matches)) {
@@ -606,7 +604,7 @@ class Agent {
                         $parentkey = 'reserved';
                         $key = strtolower($key);
                     } else {
-                        if (preg_match($varkey_pattern, $key,$varkey_match)) {
+                        if (preg_match($varkey_pattern, $key, $varkey_match)) {
                             $parentkey = 'appends';
                             $key = $varkey_match[1];
                         }
@@ -614,7 +612,7 @@ class Agent {
                     if (($ret=$this->removeQuote($value))!==false){
                         $value = $ret;
                     } else {
-                        // un quate value
+                        // un quate value, try for fetch {@VARIABLE}
                         $value = $this->varFetch($value, $module, $methodVars, $loopVars);
                     }
                     $attrs[$parentkey][$key] = $value;
@@ -624,14 +622,14 @@ class Agent {
                 }
             } // end of foreach
         }
-        return $attrs; // ['param'] / ['reserved'] / ['pushvars']
+        return $attrs;
     }
     /**
      * variable fetch .  search {@scope:name|format} , deployment to the value
-     * @param string $source 
-     * @param string $module 
-     * @param array  $methodVars 
-     * @param array  $loopVars 
+     * @param  string $source 
+     * @param  string $module 
+     * @param  array  $methodVars 
+     * @param  array  $loopVars 
      * @return string
      */
     protected function varFetch($source, $module, $methodVars, $loopVars)
@@ -652,9 +650,8 @@ class Agent {
             $output .= substr($source, 0, $pos);
 
             // --- parse variable priority ---
-            //  1.methodVars   2.$loopvars   3.modulevars   4.globalmodule
+            //  1.methodVars   2.$loopVars   3.moduleVars   4.globalmoduleVars
             $scope = ($scope == "") ? "*" : strtoupper($scope[0]);
-//            $this->log('INFO','Found:'.$match.' module='.$module.' scope='.$scope.' key='.$key.' inex='.$index.' format='.$format);
 
             $var = null;
             switch ($scope) {
@@ -677,7 +674,7 @@ class Agent {
                     $var = $this->getVariable($key, 'GLOBAL');
                     break;
             }
-            if ( isset($var) && $index!=="" ) {
+            if ( isset($var) && $index !== "") {
                 if (is_array($var)) {
                     $var = (isset($var[$index])) ? $var[$index] : null ;
                 } else {
@@ -705,9 +702,9 @@ class Agent {
      * convert format 
      * @param  mixed  $source  string|array
      * @param  string $format 
-     * @return string
+     * @return string|false
      */
-    protected function format($source, $format = 'html')
+    protected function format($source, $format = 'h')
     {
         if ($source === false) {
             return false;
@@ -736,7 +733,7 @@ class Agent {
     // Error for debug -------------------------------------------
     /**
      * return log report
-     * @TODO   use template & css coloring. 
+     * @TODO   use template & css coloring.
      * @return string
      */
     public function getLogReport()
@@ -757,6 +754,13 @@ class Agent {
         return $output;
     }
 
+    /**
+     * log
+     * @param  string $level 
+     * @param  string $message 
+     * @param  string $module 
+     * @return void
+     */
     public function log($level, $message, $module = "")
     {
         // LEVEL INFO NOTICE WARNING ERROR
@@ -766,6 +770,11 @@ class Agent {
     // ---- Utility -------------------------------------------------
     // @todo review  move to static class
 
+    /**
+     * remove Quote ' ' or " "
+     * @param  string $source 
+     * @return string|false
+     */
     protected function removeQuote($source)
     {
         $pattern = "/^(?|\"([^\"]*)\"|'([^']*)')$/";
@@ -781,7 +790,7 @@ class Agent {
      * @param  bool   $default 
      * @return bool
      */
-    public function boolStr($str, $default=false)
+    public function boolStr($str, $default = false)
     {
         //  yes|no , y|n  ,on|off    other return default
         if (! is_string($str)) {
@@ -823,4 +832,4 @@ class Agent {
         return $root;
     }
 
-} // end of Tag Agent class 
+} // end of Agent class 

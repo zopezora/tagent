@@ -2,12 +2,12 @@
    "name" : "tagent/tagent",
    "description" : "Tiny PHP Framework. View-driven Model.",
    "license" : "MIT",
-   "autoload": {
-     "psr-0": {
-        "Tagent\\": "lib/"
-     }
+   "autoload" : {
+      "psr-0": {
+         "Tagent\\": "lib/"
+      }
    },
-   "require" :{
+   "require" : {
       "php": ">=5.3.0"
    }
 }
