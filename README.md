@@ -15,7 +15,7 @@ PHP template parser.
 * Tiny PHP Freamework for non full PHP site.
 * View-driven Model  
 * Tag template parser  
-* Module manager  
+* Module control  
 * Object Locator  
 
 ##Template  
@@ -308,9 +308,20 @@ if not exist function baz and is_callable, then call __invoke($params)
 
 class ModuleLoader  
 
-Config-key 'agent_directory';  
+Config-key 'agent_directory' ( default : 'ag/'  )
 
-namespace Module_Foo\Module  
+Namespace \Module_***    
 
-require agent_directory/Module_Foo/Module.php  
+
+1. Classname Module_Foo\Module  
+require ag/Module_Foo/Module.php  
+
+2. Classname Module_Foo\Methods\bar  
+require ag/Module_Foo/Methods/bar.php  
+
+3. Classname Module_Foo\Classes\Common_Baz
+require ag/Module_Foo/Classes/Common_Baz.php  
+
+note:'_' no replace. case-sensitive.
+
 
