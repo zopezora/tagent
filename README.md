@@ -111,11 +111,11 @@ return array(
 Agent has the following module elements.  
 
 1. Module instance.  
-2. Module Variables.  
-3. Module Object.  
+2. Module Variables container.  
+3. Module Objects container.  
 
 When module be closed, also module elements are discarded.  
-However, until parse is complete, the module is not closed unless explicitly.  
+However, until until parse is completed, the module is not closed unless explicitly force close.  
 
 
 ###Open/Close, Current Module transition  
@@ -125,7 +125,7 @@ start parse, automatically open module 'GLOBAL'
 
 --- here, 'GLOBAL' current module ---
 
-<ag module='Foo'>   open module 'Foo'  try module instance , and construct module elements.  
+<ag module='Foo'>   open module 'Foo'
 
   --- here, 'Foo' current module  ---
 
@@ -139,11 +139,22 @@ start parse, automatically open module 'GLOBAL'
 
 </ag>  note: Not close module 'Foo'.
 
+--- here, 'GLOBAL' current module ---
 
 after pearse compleate 
 1.close module 'Foo'
 2.close module 'GLOBAL'
 ```
+
+'GLOBAL' module can not be forced close.  
+
+Open module  
+1. Challenge to the instance of the module.  
+2. The Module elements are prepared in Agent container.  
+
+Close module  
+1. Destruct module instance , if exists it  
+2. Remove the Module elements .  
 
 <ag method='bar'></ag>   The specified method of the current module.  
 
@@ -154,7 +165,7 @@ Each module object 'Module.php' is option.  not required.
 Also option below.  
 
 * extends AbstractModule. Easy access to the module variables  
-* implements RefreshModuleInterface. instance of this interface,  
+* implements RefreshModuleInterface. for action module 'refresh'. 
 
 >Module.php
 
