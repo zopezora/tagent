@@ -101,6 +101,7 @@ return array(
     "ob_start"        => true,
     "agent_tag"       => "ag",
     "agent_directory" => "ag/",
+    "line_offset"     => 1,
 );
 ?>
 ```
