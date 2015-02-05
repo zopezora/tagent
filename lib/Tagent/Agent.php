@@ -7,6 +7,7 @@
 namespace Tagent;
 
 use Tagent\AbstractModule;
+use Tagent\FactoryInterface;
 
 class Agent {
 
@@ -205,7 +206,15 @@ class Agent {
      */
     public function get($name, $module = 'GLOBAL')
     {
-        return (isset($this->modules[$module]['objects'][$name])) ? $this->modules[$module]['objects'][$name] : null;
+        if (isset($this->modules[$module]['objects'][$name])) {
+            $object = $this->modules[$module]['objects'][$name];
+            if ($object instanceof FactoryInterface) {
+                $this->modules[$module]['objects'][$name] = $object->factory();
+                return $this->modules[$module]['objects'][$name];
+            }
+            return $object;
+        }
+        return null;
     }
     /**
      * set object
@@ -219,7 +228,7 @@ class Agent {
         if (! isset($name)) {
             return;
         }
-        if (is_null($this->getModule($module))) {
+        if (! is_null($this->getModule($module))) {
             if (is_null($object) && isset($this->modules[$module]['objects'][$name])) { 
                 unset ($this->modules[$module]['objects'][$name]);
             } else {
@@ -609,7 +618,7 @@ class Agent {
                             $key = $varkey_match[1];
                         }
                     }
-                    if (($ret=$this->removeQuote($value))!==false){
+                    if (($ret=$this->removeQuote($value)) !== false) {
                         $value = $ret;
                     } else {
                         // un quate value, try for fetch {@VARIABLE}
