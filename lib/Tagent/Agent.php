@@ -568,7 +568,11 @@ class Agent {
                 // close tag process
                 // close module
                 if ($flagModule && $forceCloseModule ) {
-                    $this->closeModule($inModule);
+                    if ($inModule != 'GLOBAL' ) {
+                        $this->closeModule($inModule);
+                    } else {
+                        $this->log(E_WARNING, "GLOBAL module can not be forced close", $module);
+                    }
                 }
             } // end of if parse on/off
            // forward source
