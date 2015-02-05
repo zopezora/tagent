@@ -285,7 +285,7 @@ if not exist function baz and is_callable, then call __invoke($params)
 
 >template
   
-    <ag loop='baz'><li>{@LOOPKEY}-{@color}</li></ag>
+    <ul><ag loop='baz'><li>{@LOOPKEY}-{@color}</li></ag></ul>
 
 >output
 
