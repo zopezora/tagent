@@ -15,10 +15,12 @@ class Agent {
     const AGENT_TAG       = "ag";
     const AGENT_DIRECTORY = "ag/";
     const DEBUG           = false;
-    const OB_START        = true;
+    const OB_START        = false;
     const LINE_OFFSET     = 0;
+    const TEMPLATE_EXT    = ".tpl";
+
     // const pattern
-    const RESERVED_ATTRS  = 'module|method|loop|parse|close|refresh|newmodule';
+    const RESERVED_ATTRS  = 'module|method|loop|parse|close|refresh|newmodule|template';
     const OUTPUT_FORMATS  = 'h|r|u|j|html|raw|url|json';
     const VARIABLE_SCOPES = 'm|l|g|module|loop|global';
     /**
@@ -101,6 +103,7 @@ class Agent {
             "debug"           => self::DEBUG,
             "ob_start"        => self::OB_START,
             "line_offset"     => self::LINE_OFFSET,
+            "template_ext"    => self::TEMPLATE_EXT,
         );
         // config override
         $this->configs = $this->arrayOverride( $this->configs, $config );
@@ -442,6 +445,25 @@ class Agent {
         $this->log(E_WARNING,'Not Found call ('.$module.'->'.$methodname.')', $module);
         return $default;
     }
+    /**
+     * get Template
+     * @param  string $name
+     * @param  string $module
+     * @return string | false
+     */
+    public function getTemplate($name, $module = 'GLOBAL') {
+        $DS = DIRECTORY_SEPARATOR;
+        $filename = $this->getConfig('agent_directory');
+        $filename .= $this->getModuleNamespace($module).$DS."Templates".$DS;
+        $filename .= str_replace('_', $DS, $name).$this->getConfig('template_ext');
+        if (($source = $this->readFile($filename)) !== false) {
+            $this->log('TEMPLATE', $filename, $module);
+            return $source;
+        } else {
+            $this->log(E_ERROR,"Can not load template:".$filename,$module);
+        }
+        return false;
+    }
     // fetch & parse   --------------------------------------------------------------------
     /**
      * callbak for ob_start()
@@ -488,11 +510,46 @@ class Agent {
         }
     }
     /**
-     * main fetch . Retrieve nested 'agent tag' by recursive call. 
-     * Processing according to the attribute. module control, get array variables. etc..
+     * Display from file 
+     * @param  string $filename 
+     * @return bool  true|false
+     */
+    public function fileDisplay($filename)
+    {
+        if ( $source = $this->readFile($filename) !== false ) {
+            $this->display($source);
+            return true;
+        }
+        return false;
+    }
+    /**
+     * Fetch from file 
+     * @param  string $filename 
+     * @return string|false
+     */
+    public function fileFetch($filename, $module='GLOBAL', $methodVars = array(), $loopVars = array(), $line = 0)
+    {
+        if ($source = $this->readFile($filename) !== false) {
+            return $this->fetch($source);
+        } else {
+            return false;
+        }
+    }
+    public function readFile($filename)
+    {
+        if (is_readable($filename) &&  ($source = file_get_contents($filename)) !== false) {
+            return $source;
+        }
+        return false;
+    }
+    /**
+     * fetch tag parse . Retrieve nested 'agent tag' by recursive call. 
      * @param  string  $source 
-     * @param  array   $item     $item['NAME'] is expanded, provide for {@NAME} in template 
-     * @return string 
+     * @param  string  $module 
+     * @param  array   $methodVars 
+     * @param  array   $loopVars 
+     * @param  integer $line 
+     * @return string
      */
     public function fetch($source, $module='GLOBAL', $methodVars = array(), $loopVars = array(), $line = 0)
     {
@@ -525,39 +582,46 @@ class Agent {
             // inside Tag
             // attrs ['params'] / ['reserved'] / ['appends']
             $attrs = $this->attributeParse($attr, $module, $methodVars, $loopVars); 
-            $reservd = $attrs['reserved'];
+            $reserved = $attrs['reserved'];
 
             // parse switch parse= on/off yes/no
-            if ( ! $this->boolStr($reservd['parse'], true) ) {
+            if ( ! $this->boolStr($reserved['parse'], true) ) {
                 // parse = no
                 $output .= $inTag;
                 $this->log(E_NOTICE,'Parse: No', $module);
             } else {
                 // parse = yes
                 //module control
-                $inModule    = (isset($reservd["module"]))
-                                ? $reservd["module"]
+                $inModule    = (isset($reserved["module"]))
+                                ? $reserved["module"]
                                 : $module;
-                $flagModule  = (isset($reservd["module"]))
+                $flagModule  = (isset($reserved["module"]))
                                 ? $this->openModule($inModule, $attrs['params'])
                                 : false;
-                $forceCloseModule = $this->boolStr($reservd['close'], false);
+                $forceCloseModule = $this->boolStr($reserved['close'], false);
 
-                if ($this->boolStr($reservd['refresh'], false)) {
+                if ($this->boolStr($reserved['refresh'], false)) {
                     $this->refreshModule($inModule,$attrs['params']);
                 }
                 // method vars
-                $inMethodVars = (isset($reservd["method"])) 
-                                ? $this->getMethod($reservd["method"], $inModule, $attrs['params']) 
+                $inMethodVars = (isset($reserved["method"])) 
+                                ? $this->getMethod($reserved["method"], $inModule, $attrs['params']) 
                                 : $methodVars;
                 // appends vars
                 foreach ($attrs['appends'] as $key => $value) {
                     $inMethodVars[$key] = $value;
                 }
                 // loop vars
-                $inLoopVarsList = (isset($reservd["loop"]))
-                                ? $this->getLoop($reservd["loop"], $inModule, $attrs['params'])
+                $inLoopVarsList = (isset($reserved["loop"]))
+                                ? $this->getLoop($reserved["loop"], $inModule, $attrs['params'])
                                 : array('noloop'=>$loopVars);
+                // template
+                if (isset($reserved['template'])) {
+                    if ($template = $this->getTemplate($reserved['template'], $inModule)!==false) {
+                        $inTag = $template;
+                        $this->log(E_NOTICE,'Read template',$inModule);
+                    }
+                }
                 // normaly single / multi by loop vars / zero loop
                 foreach($inLoopVarsList as $key => $inLoopVars) {
                     $inLoopVars['LOOPKEY']=$key;
@@ -612,6 +676,7 @@ class Agent {
                 "method"        => null,
                 "loop"          => null,
                 "parse"         => null,
+                "template"      => null,
             ),
             'params'  => array(),
             'appends' => array(),
