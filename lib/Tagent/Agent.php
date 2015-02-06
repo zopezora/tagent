@@ -18,6 +18,7 @@ class Agent {
     const OB_START        = false;
     const LINE_OFFSET     = 0;
     const TEMPLATE_EXT    = ".tpl";
+    const LOG_REPORTING   = E_ALL;
 
     // const pattern
     const RESERVED_ATTRS  = 'module|method|loop|parse|close|refresh|newmodule|template|check';
@@ -104,21 +105,15 @@ class Agent {
             "ob_start"        => self::OB_START,
             "line_offset"     => self::LINE_OFFSET,
             "template_ext"    => self::TEMPLATE_EXT,
+            "log_reporting"   => self::LOG_REPORTING,
         );
         // Config override
         $this->configs = $this->arrayOverride( $this->configs, $config );
         // Module Autoloader
         $this->loader = ModuleLoader::init($this->configs['agent_directory']);
-        // debug
-        if ( is_string($this->configs['debug'])) {
-            $this->configs['debug'] = $this->boolStr($this->configs['debug']);
-        }
-
         // Output-Buffer start
         $this->cwd = getcwd();
-        if (is_string($this->configs['ob_start'])) {
-            $this->configs['ob_start'] = $this->boolStr($this->configs['ob_start'], true);
-        }
+        $this->configs['ob_start'] = $this->boolStr($this->configs['ob_start'], self::OB_START);
         if ($this->configs['ob_start']) {
             $callback = array($this, 'obBufferFlush');
             ob_start($callback);
@@ -145,25 +140,30 @@ class Agent {
        return $this->configs;
     }
     /**
-     * set debug
-     * @param  bool|string $bool  true|false  'on|off' / 'yes|no' / 'y|n'
-     * @return void
+     * debug  set/get
+     * @param  bool|string|null  $bool  true|false  'on|off' / 'yes|no' / 'y|n' / null
+     * @return bool true|false
      */
-    public function setDebug($bool)
+    public function debug($bool = null)
     {
-        if (is_string($bool)) {
-            $bool = $this->boolStr($bool, false);
+        if (isset($bool)) {
+            $this->configs['debug'] = $bool;
         }
-        $this->configs['debug'] = ($bool) ? true : false ;
+        return $this->boolStr($this->configs['debug'], false);
     }
     /**
-     * return debug setting boolean
-     * @return bool
+     * log reporting level
+     * @param  integer $level 
+     * @return integer
      */
-    public function getDebug()
+    public function log_reporting($level = null)
     {
-        return $this->configs['debug'];
+        if (isset($level)) {
+            $this->configs['log_reporting'] = $level;
+        }
+        return $this->configs['log_reporting'];
     }
+
     // Variables --------------------------------------------------------------------
     /**
      * get variable .  no exists key return false.
@@ -178,7 +178,7 @@ class Agent {
         return (isset($this->modules[$module]['variables'][$key])) ? $this->modules[$module]['variables'][$key] : null;
     }
     /**
-     * set variables  always override
+     * set/unset variables  always override
      * @param string $key 
      * @param mixed $var 
      * @return void
@@ -474,7 +474,7 @@ class Agent {
     {
         chdir($this->cwd);
         $output = $this->fetch($buffer);
-        if ($this->configs['debug']) {
+        if ($this->debug()) {
             $output .= $this->getLogReport();
         }
         return $output;
@@ -504,7 +504,7 @@ class Agent {
             $this->bufferDisplay();
         } else {
             echo $this->fetch($source);
-            if ($this->configs['debug']) {
+            if ($this->debug()) {
                 echo $this->getLogReport();
             }
         }
@@ -601,7 +601,7 @@ class Agent {
                 $forceCloseModule = $this->boolStr($reserved['close'], false);
 
                 if ($this->boolStr($reserved['refresh'], false)) {
-                    $this->refreshModule($inModule,$attrs['params']);
+                    $this->refreshModule($inModule, $attrs['params']);
                 }
                 // method vars
                 $inMethodVars = (isset($reserved["method"])) 
@@ -792,7 +792,7 @@ class Agent {
                 $output .= $this->format($var, $format);
             } else {
                 $this->log(E_ERROR,'Not Found Variable'.$match, $module);
-                if ($this->configs['debug']) {
+                if ($this->debug()) {
                     $output .= "*ERROR*".$match;
                 } else {
                     // $output .= $match;
@@ -856,12 +856,14 @@ class Agent {
             $output .= "  <th>MESSAGE</th>";
             $output .= " </tr>\n";
             foreach($this->logs as $log){
-                $output .= " <tr>\n";
-                $output .= "  <td>".htmlspecialchars($log['line'])."</td>\n";
-                $output .= "  <td>".htmlspecialchars($log['level_str'])."</td>\n";
-                $output .= "  <td>".htmlspecialchars($log['module'])."</td>\n";
-                $output .= "  <td>".nl2br(htmlspecialchars($log['message']))."</td>\n";
-                $output .= " </tr>\n";
+                if ($log['level'] & $this->log_reporting()) {
+                    $output .= " <tr>\n";
+                    $output .= "  <td>".htmlspecialchars($log['line'])."</td>\n";
+                    $output .= "  <td>".htmlspecialchars($log['level_str'])."</td>\n";
+                    $output .= "  <td>".htmlspecialchars($log['module'])."</td>\n";
+                    $output .= "  <td>".nl2br(htmlspecialchars($log['message']))."</td>\n";
+                    $output .= " </tr>\n";
+                }
             }
             $output .= "</table>\n";
         }
@@ -925,6 +927,9 @@ class Agent {
      */
     public function boolStr($str, $default = false)
     {
+        if (is_bool($str)){
+            return $str;
+        }
         //  yes|no , y|n  ,on|off    other return default
         if (! is_string($str)) {
             return $default;
