@@ -59,8 +59,8 @@ class ModuleLoader {
         }
         if ( strpos($namespace,'Module_')==0 ) {
             $fileName  = $this->agentDirectory.str_replace('\\', DIRECTORY_SEPARATOR, $namespace).DIRECTORY_SEPARATOR;
-//            $fileName .= str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php';   // rule psr-0
-            $fileName .= $className.'.php';
+            $fileName .= str_replace('_', DIRECTORY_SEPARATOR, $className).'.php'; // psr-0
+//            $fileName .= $className;
             if (is_readable($fileName)) {
                 require $fileName;
                 return true;

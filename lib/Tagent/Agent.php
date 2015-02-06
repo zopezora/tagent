@@ -20,7 +20,7 @@ class Agent {
     const TEMPLATE_EXT    = ".tpl";
 
     // const pattern
-    const RESERVED_ATTRS  = 'module|method|loop|parse|close|refresh|newmodule|template';
+    const RESERVED_ATTRS  = 'module|method|loop|parse|close|refresh|newmodule|template|check';
     const OUTPUT_FORMATS  = 'h|r|u|j|html|raw|url|json';
     const VARIABLE_SCOPES = 'm|l|g|module|loop|global';
     /**
@@ -105,9 +105,9 @@ class Agent {
             "line_offset"     => self::LINE_OFFSET,
             "template_ext"    => self::TEMPLATE_EXT,
         );
-        // config override
+        // Config override
         $this->configs = $this->arrayOverride( $this->configs, $config );
-        // Module utoloader
+        // Module Autoloader
         $this->loader = ModuleLoader::init($this->configs['agent_directory']);
         // debug
         if ( is_string($this->configs['debug'])) {
@@ -622,6 +622,16 @@ class Agent {
                         $this->log(E_NOTICE,'Read template',$inModule);
                     }
                 }
+                // check
+                if (isset($reserved['check'])) {
+                    $check  = "===MethodVars===\n".print_r($inMethodVars, true)."\n";
+                    $check .= "===LoopVars===\n".print_r($inLoopVars, true)."\n";
+                    $check .= "===ModuleVars===\n".print_r($this->getVariable(null, $inModule), true)."\n";
+                    if ($inModule != 'GLOBAL') {
+                        $check .= "===GlobalVars===\n".print_r($this->getVariable(null, 'GLOBAL'), true)."\n";
+                    }
+                    $this->log('CHECK',$check,$inModule);
+                }
                 // normaly single / multi by loop vars / zero loop
                 foreach($inLoopVarsList as $key => $inLoopVars) {
                     $inLoopVars['LOOPKEY']=$key;
@@ -850,7 +860,7 @@ class Agent {
                 $output .= "  <td>".htmlspecialchars($log['line'])."</td>\n";
                 $output .= "  <td>".htmlspecialchars($log['level_str'])."</td>\n";
                 $output .= "  <td>".htmlspecialchars($log['module'])."</td>\n";
-                $output .= "  <td>".htmlspecialchars($log['message'])."</td>\n";
+                $output .= "  <td>".nl2br(htmlspecialchars($log['message']))."</td>\n";
                 $output .= " </tr>\n";
             }
             $output .= "</table>\n";
