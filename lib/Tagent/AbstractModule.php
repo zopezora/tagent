@@ -21,7 +21,7 @@ abstract class AbstractModule
     final public function getVariable($key = null, $modulename = null)
     {
         if (! isset($modulename)) {
-            $modulename = Agent::getInstance()->getModuleNameByObject($this);
+            $modulename = Agent::getInstance()->getModuleNameByClass(get_class($this));
         }
         return Agent::getInstance()->getVariable($key, $modulename);
     }
@@ -34,7 +34,7 @@ abstract class AbstractModule
     final public function setVariable($key, $value, $modulename = null)
     {
         if (! isset($modulename)) {
-            $modulename = Agent::getInstance()->getModuleNameByObject($this);
+            $modulename = Agent::getInstance()->getModuleNameByClass(get_class($this));
         }
         Agent::getInstance()->setVariable($key, $value, $modulename);
     }
@@ -48,9 +48,9 @@ abstract class AbstractModule
     final public function setVariablesByArray(array $array, $modulename = null)
     {
         if (! isset($modulename)) {
-            $modulename = Agent::getInstance()->getModuleNameByObject($this);
+            $modulename = Agent::getInstance()->getModuleNameByClass(get_class($this));
         }
-        Agent::getInstance()->setVariablesByArray($array, $modulename);
+         Agent::getInstance()->setVariablesByArray($array, $modulename);
     }
 
     // ---- Module object locator -----------------------------
@@ -63,7 +63,7 @@ abstract class AbstractModule
     final public function get($name , $modulename = null)
     {
         if (! isset($modulename)){
-            $modulename = Agent::getInstance()->getModuleNameByObject($this);
+            $modulename = Agent::getInstance()->getModuleNameByClass(get_class($this));
         }
         return Agent::getInstance()->get($name, $modulename);
     }
@@ -77,7 +77,7 @@ abstract class AbstractModule
     final public function set($name, $object, $modulename = null)
     {
         if (! isset($modulename)){
-            $modulename = Agent::getInstance()->getModuleNameByObject($this);
+            $modulename = Agent::getInstance()->getModuleNameByClass(get_class($this));
         }
         Agent::getInstance()->set($name, $object, $modulename);
     }
@@ -90,9 +90,23 @@ abstract class AbstractModule
     final public function has($name, $modulename = null)
     {
         if (! isset($modulename)){
-            $modulename = Agent::getInstance()->getModuleNameByObject($this);
+            $modulename = Agent::getInstance()->getModuleNameByClass(get_class($this));
         }
         return Agent::getInstance()->has($name, $modulename);
+    }
+    /**
+     * log
+     * @param  integer|string $level 
+     * @param  string $message
+     * @return bool  true|false
+     */
+    final public function log($level, $message, $escape = true)
+    {
+        $agent = Agent::getInstance();
+        if ($agent->debug()) {
+            $modulename = $agent->getModuleNameByClass(get_class($this));
+            $agent->log($level, $message, $escape, $modulename);
+        }
     }
 
 }

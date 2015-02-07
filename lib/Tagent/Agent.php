@@ -50,15 +50,15 @@ class Agent {
      */
     protected $buffercallback = null;
     /**
-     * @var array  log contenaire  INFO NOTICE WARNING ERROR
+     * @var object  logger object
      */
-    protected $logs = array();
+    protected $logger = null;
     /**
      * @var integer  line counter
      */
     protected $line = 0;
     /**
-     * @var integer  line counter
+     * @var integer  loglevel
      */
     protected $loglevel = array(
                                 E_ERROR   => 'ERROR',   // 1
@@ -109,6 +109,10 @@ class Agent {
         );
         // Config override
         $this->configs = $this->arrayOverride( $this->configs, $config );
+        // Logger
+        if ($this->debug()) {
+            $this->logger = new Logger;
+        }
         // Module Autoloader
         $this->loader = ModuleLoader::init($this->configs['agent_directory']);
         // Output-Buffer start
@@ -144,11 +148,8 @@ class Agent {
      * @param  bool|string|null  $bool  true|false  'on|off' / 'yes|no' / 'y|n' / null
      * @return bool true|false
      */
-    public function debug($bool = null)
+    public function debug()
     {
-        if (isset($bool)) {
-            $this->configs['debug'] = $bool;
-        }
         return $this->boolStr($this->configs['debug'], false);
     }
     /**
@@ -163,7 +164,14 @@ class Agent {
         }
         return $this->configs['log_reporting'];
     }
-
+    /**
+     * get line number of parse
+     * @return integer
+     */
+    public function getLine()
+    {
+        return $this->line;
+    }
     // Variables --------------------------------------------------------------------
     /**
      * get variable .  no exists key return false.
@@ -269,7 +277,8 @@ class Agent {
      * @param  string $module 
      * @return string
      */
-    public function getModuleNamespace($module) {
+    public function getModuleNamespace($module)
+    {
         return "Module_".$module;
     }
     /**
@@ -281,7 +290,7 @@ class Agent {
     protected function openModule($module, $params = array())
     {
         if (is_null($instance = $this->getModule($module))) {
-            $this->log(E_NOTICE, "Open Module",$module);
+            $this->log(E_NOTICE, "Open Module", true, $module);
             $instance = $this->createModule($module, $params);
         }
         return $instance;
@@ -300,7 +309,7 @@ class Agent {
             $this->closeModule($module);
             $instance = $this->createModule($module, $params);
         }
-        $this->log(E_NOTICE, "new Open Module (".$module.")");
+        $this->log(E_NOTICE, "new Open Module (".$module.")", true, $module);
         return $instance;
     }
     /**
@@ -318,7 +327,7 @@ class Agent {
         if (isset($this->modules[$module])) {
             unset ($this->modules[$module]);
         }
-        $this->log(E_NOTICE, "Close Module", $module);
+        $this->log(E_NOTICE, "Close Module", true, $module);
     }
     /**
      * return module instance
@@ -349,9 +358,9 @@ class Agent {
         $classname = $this->getModuleNamespace($module)."\\Module";
         if (class_exists($classname)) {
             $this->modules[$module]['instance'] = new $classname($params);
-            $this->log(E_NOTICE, 'CREATE Module Instance ('.get_class($this->modules[$module]['instance']).")",$module);
+            $this->log(E_NOTICE, 'CREATE Module Instance ('.get_class($this->modules[$module]['instance']).")", true, $module);
         } else {
-            $this->log(E_NOTICE, 'Not Found Module class. ('.$classname.")",$module);
+            $this->log(E_NOTICE, 'Not Found Module class. ('.$classname.")", true, $module);
         }
         return $this->modules[$module]['instance'];
     }
@@ -366,24 +375,24 @@ class Agent {
         $md = $this->getModule($module);
         if (is_object($md) && method_exists($md, 'refresh')) {
             $md->refresh($params);
-            $this->log(E_NOTICE, 'Module Refresh', $module);
+            $this->log(E_NOTICE, 'Module Refresh', true, $module);
         } else {
-            $this->log(E_WARNING, 'Not exists refresh method in module method', $module);
+            $this->log(E_WARNING, 'Not exists refresh method in module method', true, $module);
         }
     }
     /**
-     * modulename by Object    check top level namespace. Module_*** , return *** 
-     * @see AbstractModule
-     * @param  object $object 
-     * @return string|false
+     * get Modulename by classname
+     * @param  string $class 
+     * @return string|false;
      */
-    public function getModuleNameByObject($object)
+    public function getModuleNameByClass($class)
     {
-        $class_array = explode("\\",get_class($object));
-        if ( count($class_array)>1 && strpos($class_array[0], "Module_")==0) {
+        if (is_string($class) && strpos($class, "Module_")==0) {
+            $class_array = explode("\\",$class);
             return str_replace("Module_","",$class_array[0]);
+        } else {
+            return false;
         }
-        return false;
     }
     // method --------------------------------------------------------------------
     /**
@@ -426,7 +435,7 @@ class Agent {
         $md = $this->getModule($module);
         $methodname = $kind."_".$name;
         if (is_object($md) && method_exists($md, $methodname)) {
-            $this->log(E_NOTICE, 'Call Module_'.$module.'->'.$methodname, $module);
+            $this->log(E_NOTICE, 'Call Module_'.$module.'->'.$methodname, true, $module);
             return (array) $md->$methodname($params);
         }
         // second, search method class   \Module_module\Method or Loops\name
@@ -434,15 +443,15 @@ class Agent {
         if (class_exists($classname)) {
             $instance = new $classname($params);
             if (method_exists($instance, $methodname)) {
-                $this->log(E_NOTICE, 'Call '.$classname.'->'.$methodname, $module);
+                $this->log(E_NOTICE, 'Call '.$classname.'->'.$methodname, true, $module);
                 return (array) $instance->$methodname($params);
             }
             if (is_callable($instance)) {
-                $this->log(E_NOTICE, 'Callable '.$kind.' '.$classname.'()', $module);
+                $this->log(E_NOTICE, 'Callable '.$kind.' '.$classname.'()', true, $module);
                 return (array) $instance($params);
             }
         }
-        $this->log(E_WARNING,'Not Found call ('.$module.'->'.$methodname.')', $module);
+        $this->log(E_WARNING,'Not Found call ('.$module.'->'.$methodname.')', true, $module);
         return $default;
     }
     /**
@@ -457,10 +466,10 @@ class Agent {
         $filename .= $this->getModuleNamespace($module).$DS."Templates".$DS;
         $filename .= str_replace('_', $DS, $name).$this->getConfig('template_ext');
         if (($source = $this->readFile($filename)) !== false) {
-            $this->log('TEMPLATE', $filename, $module);
+            $this->log('TEMPLATE', $filename, true, $module);
             return $source;
         } else {
-            $this->log(E_ERROR,"Can not load template:".$filename,$module);
+            $this->log(E_ERROR,"Can not load template:".$filename, true, $module);
         }
         return false;
     }
@@ -588,7 +597,7 @@ class Agent {
             if ( ! $this->boolStr($reserved['parse'], true) ) {
                 // parse = no
                 $output .= $inTag;
-                $this->log(E_NOTICE,'Parse: No', $module);
+                $this->log(E_NOTICE,'Parse: No', true, $module);
             } else {
                 // parse = yes
                 //module control
@@ -619,18 +628,19 @@ class Agent {
                 if (isset($reserved['template'])) {
                     if ($template = $this->getTemplate($reserved['template'], $inModule)!==false) {
                         $inTag = $template;
-                        $this->log(E_NOTICE,'Read template',$inModule);
+                        $this->log(E_NOTICE,'Read template', true, $inModule);
                     }
                 }
                 // check
                 if (isset($reserved['check'])) {
-                    $check  = "===MethodVars===\n".print_r($inMethodVars, true)."\n";
-                    $check .= "===LoopVars===\n".print_r($inLoopVars, true)."\n";
-                    $check .= "===ModuleVars===\n".print_r($this->getVariable(null, $inModule), true)."\n";
+                    $check = "";
+                    $check .= "===MethodVars===\n".(string) new ArrayDumpTable($inMethodVars);
+                    $check .= "===LoopVars===\n".(string) new ArrayDumpTable($inLoopVars);
+                    $check .= "===ModuleVars===\n".(string) new ArrayDumpTable($this->getVariable(null, $inModule));
                     if ($inModule != 'GLOBAL') {
-                        $check .= "===GlobalVars===\n".print_r($this->getVariable(null, 'GLOBAL'), true)."\n";
+                        $check .= "===GlobalVars===".(string) new ArrayDumpTable($this->getVariable(null, 'GLOBAL'));
                     }
-                    $this->log('CHECK',$check,$inModule);
+                    $this->log('CHECK', $check, false, $inModule);
                 }
                 // normaly single / multi by loop vars / zero loop
                 foreach($inLoopVarsList as $key => $inLoopVars) {
@@ -645,7 +655,7 @@ class Agent {
                     if ($inModule != 'GLOBAL' ) {
                         $this->closeModule($inModule);
                     } else {
-                        $this->log(E_WARNING, "GLOBAL module can not be forced close", $module);
+                        $this->log(E_WARNING, "GLOBAL module can not be forced close", true, $module);
                     }
                 }
             } // end of if parse on/off
@@ -724,7 +734,7 @@ class Agent {
                     $attrs[$parentkey][$key] = $value;
                 } else {
                     // Unvalid attribute
-                    $this->log(E_WARNING, "Unvalid attribute (".$v.")", $module);
+                    $this->log(E_WARNING, "Unvalid attribute (".$v.")", true, $module);
                 }
             } // end of foreach
         }
@@ -784,14 +794,14 @@ class Agent {
                 if (is_array($var)) {
                     $var = (isset($var[$index])) ? $var[$index] : null ;
                 } else {
-                    $this->log(E_WARNING, 'varFetch Not array index ['.$index.'] is Unvalid '.$match, $module);
+                    $this->log(E_WARNING, 'varFetch Not array index ['.$index.'] is Unvalid '.$match, true, $module);
                 }
             } 
             if (isset($var)) {
                 //format
                 $output .= $this->format($var, $format);
             } else {
-                $this->log(E_ERROR,'Not Found Variable'.$match, $module);
+                $this->log(E_ERROR,'Not Found Variable'.$match, true, $module);
                 if ($this->debug()) {
                     $output .= "*ERROR*".$match;
                 } else {
@@ -839,36 +849,14 @@ class Agent {
     // Error for debug -------------------------------------------
     /**
      * return log report
-     * @TODO   use template & css coloring.
-     * @return string
+     * @return string|fale
      */
     public function getLogReport()
     {
-        $output  = "<div style='clear:both; border:1px solid #F00;'>\n";
-        if (empty($this->logs)) {
-            $output .= "No Report\n";
-        } else {
-            $output .= "<table border=1>\n";
-            $output .= " <tr>\n";
-            $output .= "  <th>LINE</th>";
-            $output .= "  <th>LEVEL</th>";
-            $output .= "  <th>MODULE</th>";
-            $output .= "  <th>MESSAGE</th>";
-            $output .= " </tr>\n";
-            foreach($this->logs as $log){
-                if ($log['level'] & $this->log_reporting()) {
-                    $output .= " <tr>\n";
-                    $output .= "  <td>".htmlspecialchars($log['line'])."</td>\n";
-                    $output .= "  <td>".htmlspecialchars($log['level_str'])."</td>\n";
-                    $output .= "  <td>".htmlspecialchars($log['module'])."</td>\n";
-                    $output .= "  <td>".nl2br(htmlspecialchars($log['message']))."</td>\n";
-                    $output .= " </tr>\n";
-                }
-            }
-            $output .= "</table>\n";
+        if ($this->debug()) {
+            return $this->logger->report($this->log_reporting());
         }
-        $output .= "</div>\n";
-        return $output;
+        return false;
     }
     /**
      * log
@@ -877,34 +865,15 @@ class Agent {
      * @param  string $module 
      * @return void
      */
-    public function log($level, $message, $module = "")
+    public function log($level, $message, $escape = true, $module = "")
     {
-        // $level 1.ERROR 2.WARNING 4.PARSE 8.NOTICE     16384 E_USER_DEPRECATED
-        if (is_string($level)) {
-            $level_str = (is_string($level)) ? $level: $level;
-            $level     = E_USER_DEPRECATED; // 0x4000
-        } else {
-            if (isset($this->loglevel[$level])) {
-                $level_str = $this->loglevel[$level];
-            } else {
-                $level_str = "UNDEFINED";
-                $level     = E_USER_DEPRECATED; // 0x4000
-            }
+        if ($this->debug()) {
+            $this->logger->log($level, $message, $escape, $module);
         }
-        $offset = ($this->line !=0 ) ? $offset = $this->getConfig('line_offset') : 0;
-
-        $this->logs[] = array(
-                    "line"      => $this->line + $offset,
-                    "level"     => $level,
-                    "level_str" => $level_str,
-                    "module"    => $module,
-                    "message"   => $message,
-        );
     }
 
     // ---- Utility -------------------------------------------------
     // @todo review  move to static class
-
     /**
      * remove Quote ' ' or " "
      * @param  string $source 

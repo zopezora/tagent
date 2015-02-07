@@ -30,7 +30,7 @@ PHP template parser.
 ```
 
 some attributes are reserved.  
-`module`,`method`,`loop`,`parse`,`close`,`refresh`,`newmodule`  
+`module`,`method`,`loop`,`parse`,`close`,`refresh`,`newmodule`,`template`  
 
 Other attributes are used as a property  array $params  (see. Module,method,loop)  
 
@@ -68,14 +68,16 @@ example : use composer
 [project] - [public] - WEB DOCUMENT ROOT
           |            index.php
           |            (-some-)
-          |- [ag]-[Module_GLOBAL] -[Methods] - *.php 
-          |      |                 [Loops]   - *.php
-          |      |                 [-some-]  - *.php
+          |- [ag]-[Module_GLOBAL] -[Methods]  - *.php 
+          |      |                 [Loops]    - *.php
+          |      |                 [Templates]- *.tpl
+          |      |                 [-some-]   - *.php
           |      |                 Module.php
           |      |
-          |      |-[Module_Foo]----[Methods] - *.php
-          |                        [Loops]   - *.php
-          |                        [-some-]  - *.php
+          |      |-[Module_Foo]----[Methods]  - *.php
+          |                        [Loops]    - *.php
+          |                        [Templates]- *.tpl
+          |                        [-some-]   - *.php
           |                        Module.php
           |- bootstrap.php
           |- config.php
@@ -97,14 +99,77 @@ $agent = \Tagent\Agent::init( require 'config.php' );
 ```php 
 <?php
 return array(
-    "debug"           => true,
+    "debug"           => false,
     "ob_start"        => true,
     "agent_tag"       => "ag",
     "agent_directory" => "ag/",
-    "line_offset"     => 1,
+    "line_offset"     => 1,      // for log reporting.  
+    "template_ext"    => ".tpl",
 );
 ?>
 ```
+
+>targetfiles.php
+    <?php require (dirname($_SERVER['DOCUMENT_ROOT']).'/bootstrap.php'); ?>
+    <!DOCTYPE html>
+    <!--- omission --->
+    </html>
+
+
+###For debug
+
+```php 
+<?php
+return array(
+    "debug"           => true,
+    "ob_start"        => false,
+    "agent_tag"       => "ag",
+    "agent_directory" => "ag/",
+    "line_offset"     => 1,       // for log reporting.
+    "template_ext"    => ".tpl",
+);
+?>
+```
+
+ob_strt=false, add dispaly() method at the end of the file  
+
+>targetfiles.php  
+    <?php require (dirname($_SERVER['DOCUMENT_ROOT']).'/bootstrap.php'); ?>
+    <!DOCTYPE html>
+    <!--- omission --->
+    </html>
+    <?php $agent->display(); ?>
+
+or Tagent\Agent::getInstance()->display();  
+
+###Another bootstrap idea  
+
+by using .htaccess  
+
+>config.php  
+
+    "line_offset"     => 0,       // for log reporting.
+
+####Setting auto_prepend
+
+automatically preload bootstrap.php for file extension .tpl and .php  
+
+>.htaccess  
+
+    AddType application/x-httpd-php .tpl
+    php_value auto_prepend_file "../bootstrap.php"
+
+####Challenge?  
+
+*Carefully, There are several risk*  
+
+automatically preload bootstrap.php for file extension .html .js .css and .php  
+
+>.htaccess  
+
+    AddType application/x-httpd-php .html .js .css
+    php_value auto_prepend_file "../bootstrap.php"
+
 
 ##Module control
 
@@ -137,7 +202,7 @@ start parse, automatically open module 'GLOBAL'
 
   --- here, 'Foo' current module  ---
 
-</ag>  note: Not close module 'Foo'.
+</ag>  note: Not close module 'Foo'.  unless close attribute
 
 --- here, 'GLOBAL' current module ---
 
@@ -324,6 +389,8 @@ Config-key 'agent_directory' ( default : 'ag/'  )
 
 Namespace \Module_***    
 
+Psr-0  
+
 
 1. Classname Module_Foo\Module  
 require ag/Module_Foo/Module.php  
@@ -332,8 +399,10 @@ require ag/Module_Foo/Module.php
 require ag/Module_Foo/Methods/bar.php  
 
 3. Classname Module_Foo\Classes\Common_Baz
-require ag/Module_Foo/Classes/Common_Baz.php  
+require ag/Module_Foo/Classes/Common/Baz.php  
 
-note:'_' no replace. case-sensitive.
+
+clasname '_' replace to `DIRECTORY_SEPALATOR`.  
+case-sensitive.  
 
 
