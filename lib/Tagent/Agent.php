@@ -484,7 +484,7 @@ class Agent {
         chdir($this->cwd);
         $output = $this->fetch($buffer);
         if ($this->debug()) {
-            $output .= $this->getLogReport();
+            $output .= $this->logger->report($this->log_reporting());
         }
         return $output;
     }
@@ -514,7 +514,7 @@ class Agent {
         } else {
             echo $this->fetch($source);
             if ($this->debug()) {
-                echo $this->getLogReport();
+                echo $this->logger->report($this->log_reporting());
             }
         }
     }
@@ -633,14 +633,15 @@ class Agent {
                 }
                 // check
                 if (isset($reserved['check'])) {
-                    $check = "";
-                    $check .= "===MethodVars===\n".(string) new ArrayDumpTable($inMethodVars);
-                    $check .= "===LoopVars===\n".(string) new ArrayDumpTable($inLoopVars);
-                    $check .= "===ModuleVars===\n".(string) new ArrayDumpTable($this->getVariable(null, $inModule));
+                    $check  = "<ul>";
+                    $check .= " <li>Method variables\n".(string) new ArrayDumpTable($inMethodVars)."</li>";
+                    $check .= " <li>Loop variables\n".(string) new ArrayDumpTable($inLoopVars)."</li>";
+                    $check .= " <li>Module variables\n".(string) new ArrayDumpTable($this->getVariable(null, $inModule))."</li>";
                     if ($inModule != 'GLOBAL') {
-                        $check .= "===GlobalVars===".(string) new ArrayDumpTable($this->getVariable(null, 'GLOBAL'));
+                        $check .= "<li>Global variables\n".(string) new ArrayDumpTable($this->getVariable(null, 'GLOBAL'))."</li>";
                     }
-                    $this->log('CHECK', $check, false, $inModule);
+                    $check .= "</ul>";
+                    $this->log(E_DEPRECATED, $check, false, $inModule);
                 }
                 // normaly single / multi by loop vars / zero loop
                 foreach($inLoopVarsList as $key => $inLoopVars) {
@@ -801,9 +802,9 @@ class Agent {
                 //format
                 $output .= $this->format($var, $format);
             } else {
-                $this->log(E_ERROR,'Not Found Variable'.$match, true, $module);
+                $this->log(E_PARSE,'Not Found Variable'.$match, true, $module);
                 if ($this->debug()) {
-                    $output .= "*ERROR*".$match;
+                    $output .= "*NotFound*".$match;
                 } else {
                     // $output .= $match;
                 }
@@ -825,6 +826,14 @@ class Agent {
         if ($source === false) {
             return false;
         }
+        if (is_object($source) && ! method_exists($source,'__toString')) {
+            $this->log(E_PARSE,'Cannot convert from object to string');
+            if ($this->debug()) {
+                return "*Object*";
+            }
+            return false;
+        }
+
         $format = ($format=="") ? "h" : strtolower($format)[0];
         switch ($format) {
             case 'h':
