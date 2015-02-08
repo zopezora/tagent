@@ -30,7 +30,7 @@ PHP template parser.
 ```
 
 some attributes are reserved.  
-`module`,`method`,`loop`,`parse`,`close`,`refresh`,`newmodule`,`template`  
+`module`,`method`,`loop`,`parse`,`close`,`refresh`,`newmodule`,`template`,`check`  
 
 Other attributes are used as a property  array $params  (see. Module,method,loop)  
 
@@ -110,6 +110,7 @@ return array(
 ```
 
 >targetfiles.php
+
     <?php require (dirname($_SERVER['DOCUMENT_ROOT']).'/bootstrap.php'); ?>
     <!DOCTYPE html>
     <!--- omission --->
@@ -134,6 +135,7 @@ return array(
 ob_strt=false, add dispaly() method at the end of the file  
 
 >targetfiles.php  
+
     <?php require (dirname($_SERVER['DOCUMENT_ROOT']).'/bootstrap.php'); ?>
     <!DOCTYPE html>
     <!--- omission --->
@@ -161,7 +163,7 @@ automatically preload bootstrap.php for file extension .tpl and .php
 
 ####Challenge?  
 
-*Carefully, There are several risk*  
+*Carefully. There are several risks*  
 
 automatically preload bootstrap.php for file extension .html .js .css and .php  
 
