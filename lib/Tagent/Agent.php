@@ -773,30 +773,26 @@ class Agent {
             $var = null;
             switch ($scope) {
                 case "*":
-                    $var = (isset($methodVars[$key])) ? $methodVars[$key] : null;
+                    $var = $this->getValueInArray($key, $index, $methodVars);
                     if (isset($var)){
                         break;
                     } // else no break
                 case "L": 
-                    $var = (isset($loopVars[$key])) ? $loopVars[$key] : null;
+                    $var = $this->getValueInArray($key, $index, $loopVars);
                     if (isset($var) || $scope == "L") { 
                         break;
                     } // else no break
                 case "M": 
-                    $var = $this->getVariable($key, $module);
+                    $var = $this->getValueInArray($key, $index, $this->getVariable(null, $module));
                     if (isset($var) || $scope == "M" || $module == 'GLOBAL') {
                         break;
                     } // else no break
                 case "G":
-                    $var = $this->getVariable($key, 'GLOBAL');
+                    $var = $this->getValueInArray($key, $index, $this->getVariable(null, 'GLOBAL'));
                     break;
             }
-            if ( isset($var) && $index !== "") {
-                if (is_array($var)) {
-                    $var = (isset($var[$index])) ? $var[$index] : null ;
-                } else {
-                    $this->log(E_WARNING, 'varFetch Not array index ['.$index.'] is Unvalid '.$match, true, $module);
-                }
+            if ( is_null($var) && $index !== "") {
+                $this->log(E_WARNING, 'varFetch Not array index ['.$index.'] is Unvalid '.$match, true, $module);
             } 
             if (isset($var)) {
                 //format
@@ -816,6 +812,22 @@ class Agent {
         return $output;
     }
     /**
+     * get value  array[key] / array[key][index]
+     * @param string $key
+     * @param string $index
+     * @param array  $array
+     * @return string|null
+     */
+    protected function getValueInArray($key, $index, $array)
+    {
+        if ($index == '') {
+            $var = (isset($array[$key])) ? $array[$key] : null;
+        } else {
+            $var = (isset($array[$key][$index])) ? $array[$key][$index] : null;
+        }
+        return $var;
+    }
+    /**
      * convert format 
      * @param  mixed  $source  string|array
      * @param  string $format 
@@ -827,7 +839,7 @@ class Agent {
             return false;
         }
         if (is_object($source) && ! method_exists($source,'__toString')) {
-            $this->log(E_PARSE,'Cannot convert from object to string');
+            $this->log(E_PARSE,'Cannot convert from object ('.get_class($source).') to string ');
             if ($this->debug()) {
                 return "*Object*";
             }
