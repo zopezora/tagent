@@ -623,30 +623,34 @@ class Agent {
                 // loop vars
                 $inLoopVarsList = (isset($reserved["loop"]))
                                 ? $this->getLoop($reserved["loop"], $inModule, $attrs['params'])
-                                : array('noloop'=>$loopVars);
+                                : array('_NOLOOP_'=>$loopVars);
                 // template
                 if (isset($reserved['template'])) {
                     if ($template = $this->getTemplate($reserved['template'], $inModule)!==false) {
                         $inTag = $template;
                         $this->log(E_NOTICE,'Read template', true, $inModule);
+                    } else {
+                        $this->log(E_WARNING,'Not Fond template '.$$reserved['template'], true, $inModule);
                     }
                 }
                 // check
                 if (isset($reserved['check'])) {
                     $check  = "<ul>";
                     $check .= " <li>Method variables\n".(string) new ArrayDumpTable($inMethodVars)."</li>";
-                    $check .= " <li>Loop variables\n".(string) new ArrayDumpTable($inLoopVars)."</li>";
-                    $check .= " <li>Module variables\n".(string) new ArrayDumpTable($this->getVariable(null, $inModule))."</li>";
+                    $check .= " <li>Loop variables\n".(string) new ArrayDumpTable($inLoopVarsList)."</li>";
+                    $check .= " <li>".$inModule." Module variables\n".(string) new ArrayDumpTable($this->getVariable(null, $inModule))."</li>";
                     if ($inModule != 'GLOBAL') {
-                        $check .= "<li>Global variables\n".(string) new ArrayDumpTable($this->getVariable(null, 'GLOBAL'))."</li>";
+                        $check .= "<li>GLOBAL Module variables\n".(string) new ArrayDumpTable($this->getVariable(null, 'GLOBAL'))."</li>";
                     }
                     $check .= "</ul>";
                     $this->log(E_DEPRECATED, $check, false, $inModule);
                 }
-                // normaly single / multi by loop vars / zero loop
+                // normaly single / multi by loop vars / zero loop , if loop return empty array.
                 foreach($inLoopVarsList as $key => $inLoopVars) {
-                    $inLoopVars['LOOPKEY']=$key;
-                    // recursive fetch
+                    if ($key != '_NOLOOP_'){
+                        $inLoopVars['LOOPKEY']=$key;
+                    }
+                    // recursive fetch inside
                     $output .= $this->fetch($inTag, $inModule, $inMethodVars, $inLoopVars, $line);
                 }
                 $this->line = ($line += substr_count($match, "\n"));
