@@ -820,9 +820,9 @@ class Agent {
     }
     /**
      * get value  array[key] / array[key][index]
-     * @param string $key
-     * @param string $index
-     * @param array  $array
+     * @param  string $key
+     * @param  array $index_array
+     * @param  array  $array
      * @return string|null
      */
     protected function getValueInArray($key, $index_array, $array)
@@ -849,18 +849,15 @@ class Agent {
     }
     /**
      * suarebracketExplode   
-     * @param  string $source  [a1][a2]..
+     * @param  string $source  [a1][a2]...
      * @return array           array (a1,a2, ...)
      */
     protected function squarebracketExplode($source)
     {
-
         if (preg_match_all("/\[([^\[\]]+)\]/", $source, $matches)) {
-            print_r($matches[1]);
             return $matches[1];
-        } else {
-            return array();
         }
+        return array();
     }
     /**
      * convert format 
