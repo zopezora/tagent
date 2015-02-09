@@ -836,7 +836,7 @@ class Agent {
             return $var;
         } else {
             foreach ($index_array as $index) {
-                if (isset($var[$index])) {
+                if ((is_array($var) || $var instanceof \ArrayObject ) && isset($var[$index])) {
                     $var = $var[$index];
                 } elseif (is_object($var) && property_exists($var, $index)) {
                     $var = $var->$index;
