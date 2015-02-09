@@ -229,13 +229,24 @@ class Agent {
      */
     public function get($name, $module = 'GLOBAL')
     {
-        if (isset($this->modules[$module]['objects'][$name])) {
-            $object = $this->modules[$module]['objects'][$name];
-            if ($object instanceof FactoryInterface) {
-                $this->modules[$module]['objects'][$name] = $object->factory();
-                return $this->modules[$module]['objects'][$name];
+        if (! isset($name) || ! is_string($name)) {
+            $this->log(E_WARNING,"Object Locator:get('{$name}','{$module}') Unvalid name" );
+            return null;
+        }
+        if (isset($this->modules[$module])) {
+            if (isset($this->modules[$module]['objects'][$name])) {
+                $object = $this->modules[$module]['objects'][$name];
+                if ($object instanceof FactoryInterface) {
+                    $this->modules[$module]['objects'][$name] = $object->factory();
+                    $this->log(E_NOTICE,"Object Locator:get('{$name}','{$module}') call ".get_class($object)."->factory().");
+                    return $this->modules[$module]['objects'][$name];
+                }
+                return $object;
+            } else {
+                $this->log(E_WARNING,"Object Locator:get('{$name}','{$module}') Not Found.");
             }
-            return $object;
+        } else {
+            $this->log(E_WARNING,"Object Locator:get('{$name}','{$module}') module is not open yet.");
         }
         return null;
     }
@@ -248,17 +259,19 @@ class Agent {
      */
     public function set($name, $object, $module = 'GLOBAL')
     {
-        if (! isset($name)) {
+        $objectname = (is_object($object)) ? get_class($object) : "";
+        if (! isset($name) || ! is_string($name)) {
+            $this->log(E_WARNING, "Object Locator: set('{$name}','{$objectname}',{$module}' Unvalid name");
             return;
         }
-        if (! is_null($this->getModule($module))) {
+        if (isset($this->modules[$module])) {
             if (is_null($object) && isset($this->modules[$module]['objects'][$name])) { 
                 unset ($this->modules[$module]['objects'][$name]);
             } else {
                 $this->modules[$module]['objects'][$name] = $object;
             }
         } else {
-            $this->log(E_WARNING, 'set '.$name.' module='.$module.' is not open yet');
+            $this->log(E_WARNING, "Object Locator: set('{$name}','{$objectname}',{$module}' is not open yet");
         }
     }
     /**
@@ -269,6 +282,14 @@ class Agent {
      */
     public function has($name, $module = 'GLOBAL')
     {
+        if (! isset($name) || ! is_string($name) ) {
+            $this->log(E_WARNING,"Object Locator:has('{$name}','{$module}') Unvalid name" );
+            return false;
+        }
+        if (isset($this->modules[$module])) {
+            $this->log(E_WARNING,"Object Locator:has('{$name}','{$module}') module is not open yet.");
+            return fale;
+        }
         return (isset($this->modules[$module]['objects'][$key])) ? true : false;
     }
     // Module Control --------------------------------------------------------------------
@@ -336,7 +357,7 @@ class Agent {
      */
     public function getModule($module, $tryopen = false)
     {
-        if (isset($this->modules[$module]['instance'])) {
+        if (isset($this->modules[$module])) {
             return $this->modules[$module]['instance'];
         }
         if ($tryopen) {
