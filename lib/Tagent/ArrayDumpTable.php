@@ -8,8 +8,9 @@ namespace Tagent;
 class ArrayDumpTable
 {
     // const for css
-    const CSS_CLASS     = 'arrayDump';
-    const CSS_CLASS_KEY = 'arrayDumpKey';
+    const CSS_CLASS      = 'arrayDump';
+    const CSS_CLASS_KEY  = 'arrayDumpKey';
+    const CSS_CLASS_NOTE = 'arrayDumpNote';
 
     const STYLE = <<<'STYLE'
 <style>
@@ -29,6 +30,9 @@ class ArrayDumpTable
     }
     table.arrayDump td.arrayDumpKey {
         background      : #eee;
+    }
+    table.arrayDump td.arrayDumpNote {
+        background      : #f99;
     }
 </style>
 
@@ -78,12 +82,12 @@ STYLE;
         $output .= " <tr>\n";
         $output .= "  <th colspan=2>array</th>\n";
         $output .= " </tr>\n";
-        if (empty($var)){
+        if (empty($var)) {
             $output .= " <tr>\n";
             $output .= "  <td colspan=2>[empty]</td>\n";
             $output .= " </tr>\n";
         }
-        foreach ($var as $key=>$value ){
+        foreach ($var as $key=>$value ) {
             $output .= " <tr>\n";
             $output .= "  <td class=".self::CSS_CLASS_KEY.">".htmlspecialchars($key)."</td>\n";
             $output .= "  <td>".$this->expand($value)."</td>\n";
@@ -94,30 +98,32 @@ STYLE;
     }
     public function objectExpand($var)
     {
-        $output = "<table border=1>\n";
+        $output = "<table class='".self::CSS_CLASS."'>\n";
         $output .= " <tr>\n";
         $output .= "  <th colspan=2>".get_class($var)."</th>\n";
         $output .= " </tr>\n";
 
         if ($var instanceof \Traversable) {
-            foreach ($var as $key=>$value ){
+            foreach ($var as $key => $value ) {
                 $output .= " <tr>\n";
-                $output .= "  <td class=".self::CSS_CLASS_KEY.">".htmlspecialchars($key)."</td>\n";
+                $output .= "  <td class='".self::CSS_CLASS_KEY."'>".htmlspecialchars($key)."</td>\n";
                 $output .= "  <td>".$this->expand($value)."</td>\n";
                 $output .= " </tr>\n";
+            }
+            if (! $var instanceof \itelator && ! $var instanceof \ArrayAccess) {
+                $output .= "<tr><td colspan=2 class=".self::CSS_CLASS_NOTE.">Not itelator.May not be able to rewind.</td></tr>";
             }
         } else {
             $output .= "<tr>\n";
             $output .= " <td colspan=2>".print_r($var, true)."</td>\n";
             $output .= "</tr>\n";
         }
-
         $output .= "</table>\n";
         return $output;
     }
     public function resourceExpand($var)
     {
-        $output = "<table border=1>\n";
+        $output = "<table class='".self::CSS_CLASS."'>\n";
         $output .= " <tr>\n";
         $output .= "  <th colspan=2>resource</th>\n";
         $output .= " </tr>\n";

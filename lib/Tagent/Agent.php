@@ -459,7 +459,7 @@ class Agent {
      * @param  string $module  module name
      * @param  array  $params  tag attribute params
      * @param  mixed  $default return default
-     * @return array           case method: array() / case loop: array(array())
+     * @return array|object    case method: array() / case loop: array(array())
      */
     protected function callGetVariables($kind, $name, $module, $params, $default)
     {
@@ -468,7 +468,7 @@ class Agent {
         $methodname = $kind."_".$name;
         if (is_object($md) && method_exists($md, $methodname)) {
             $this->log(E_NOTICE, 'Call Module_'.$module.'->'.$methodname, true, $module);
-            return (array) $md->$methodname($params);
+            return $md->$methodname($params);
         }
         // second, search method class   \Module_module\Method or Loops\name
         $classname = $this->getModuleNamespace($module)."\\".ucfirst($kind)."s\\".$name;
@@ -476,12 +476,14 @@ class Agent {
             $instance = new $classname($params);
             if (method_exists($instance, $methodname)) {
                 $this->log(E_NOTICE, 'Call '.$classname.'->'.$methodname, true, $module);
-                return (array) $instance->$methodname($params);
+                return $instance->$methodname($params);
             }
             if (is_callable($instance)) {
                 $this->log(E_NOTICE, 'Callable '.$kind.' '.$classname.'()', true, $module);
-                return (array) $instance($params);
+                return $instance($params);
             }
+            $this->log(E_WARNING,$king.': '.$classname.' Not found '.$methodname.',and Not Callable.', true, $module);
+            return $default;
         }
         $this->log(E_WARNING,'Not Found call ('.$module.'->'.$methodname.')', true, $module);
         return $default;
@@ -592,7 +594,7 @@ class Agent {
      * @param  integer $line 
      * @return string
      */
-    public function fetch($source, $module='GLOBAL', $methodVars = array(), $loopVars = array(), $line = 0)
+    public function fetch($source, $module='GLOBAL', $methodVars = array(), $loopVars = array(), $loopkey = '', $line = 0)
     {
         // pre-process  global fetch
         $flagGlobal = false;
@@ -617,12 +619,12 @@ class Agent {
             $len   = strlen($match);
 
             // before Tag
-            $output .= $this->varFetch(substr($source, 0, $pos), $module, $methodVars, $loopVars, $line);
+            $output .= $this->varFetch(substr($source, 0, $pos), $module, $methodVars, $loopVars, $loopkey, $line);
             $this->line = ($line += substr_count(substr($source, 0, $pos), "\n"));
 
             // inside Tag
             // attrs ['params'] / ['reserved'] / ['appends']
-            $attrs = $this->attributeParse($attr, $module, $methodVars, $loopVars, $line); 
+            $attrs = $this->attributeParse($attr, $module, $methodVars, $loopVars, $loopkey, $line); 
             $reserved = $attrs['reserved'];
 
             // parse switch parse= on/off yes/no
@@ -666,7 +668,7 @@ class Agent {
                     }
                 }
                 // check
-                if (isset($reserved['check'])) {
+                if ($this->boolStr($reserved['check'], false)) {
                     $check  = "<ul>";
                     $check .= " <li>Method variables\n".(string) new ArrayDumpTable($inMethodVars)."</li>";
                     $check .= " <li>Loop variables\n".(string) new ArrayDumpTable($inLoopVarsList)."</li>";
@@ -678,13 +680,11 @@ class Agent {
                     $this->log(E_DEPRECATED, $check, false, $inModule);
                 }
                 // normaly single / multi by loop vars / zero loop , if loop return empty array.
+
                 foreach($inLoopVarsList as $key => $inLoopVars) {
-                    if ($key !== '_NOLOOP_') {
-                        $inLoopVars['LOOPKEY'] = $key;
-                        $this->log('loopkey', $key);
-                    }
+                    $loopkey = ($key !== '_NOLOOP_') ? $key : '';
                     // recursive fetch inside
-                    $output .= $this->fetch($inTag, $inModule, $inMethodVars, $inLoopVars, $line);
+                    $output .= $this->fetch($inTag, $inModule, $inMethodVars, $inLoopVars, $loopkey, $line);
                 }
                 $this->line = ($line += substr_count($match, "\n"));
                 // close tag process
@@ -701,7 +701,7 @@ class Agent {
             $source = substr($source, $pos+$len );
         } // end of while serch <tag>
 
-        $output .= $this->varFetch($source, $module, $methodVars, $loopVars, $line);
+        $output .= $this->varFetch($source, $module, $methodVars, $loopVars, $loopkey, $line);
         $this->line = ( $line += substr_count($source, "\n"));
 
         // post-process global fetch
@@ -723,7 +723,7 @@ class Agent {
      * @param  array  $loopVars
      * @return array
      */
-    protected function attributeParse($source, $module, $methodVars, $loopVars, $line)
+    protected function attributeParse($source, $module, $methodVars, $loopVars, $loopkey, $line)
     {
         $attrs = array(
             'reserved' => array(
@@ -735,6 +735,7 @@ class Agent {
                 "loop"          => null,
                 "parse"         => null,
                 "template"      => null,
+                "check"         => null,
             ),
             'params'  => array(),
             'appends' => array(),
@@ -767,7 +768,7 @@ class Agent {
                         $value = $ret;
                     } else {
                         // un quate value, try for fetch {@VARIABLE}
-                        $value = $this->varFetch($value, $module, $methodVars, $loopVars, $line);
+                        $value = $this->varFetch($value, $module, $methodVars, $loopVars, $loopkey, $line);
                     }
                     $attrs[$parentkey][$key] = $value;
                 } else {
@@ -786,7 +787,7 @@ class Agent {
      * @param  array  $loopVars 
      * @return string
      */
-    protected function varFetch($source, $module, $methodVars, $loopVars, $line)
+    protected function varFetch($source, $module, $methodVars, $loopVars, $loopkey, $line)
     {
         $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())(\w+)(?|\[(\w*)\]|())(?|\|(".self::OUTPUT_FORMATS.")|())}/i";
         $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())(\w+)(?|((?:\[[^\[\]]+\])+)|())(?|\|(".self::OUTPUT_FORMATS.")|())}/i";
@@ -817,8 +818,12 @@ class Agent {
                     if (isset($var)){
                         break;
                     } // else no break
-                case "L": 
-                    $var = $this->getValueInArray($key, $index_array, $loopVars);
+                case "L":
+                    if ($key=='LOOPKEY') {
+                        $var = $loopkey;
+                    } else {
+                        $var = $this->getValueInArray($key, $index_array, $loopVars);
+                    }
                     if (isset($var) || $scope == "L") { 
                         break;
                     } // else no break
@@ -832,8 +837,8 @@ class Agent {
                     break;
             }
             if ( is_null($var) && $index !== "") {
-                $this->log(E_WARNING, 'varFetch Not array index ['.$index.'] is Unvalid '.$match, true, $module);
-            } 
+                $this->log(E_PARSE, 'Not Found Variable array index ['.$index.'] is Unvalid '.$match, true, $module);
+            }
             if (isset($var)) {
                 //format
                 $output .= $this->format($var, $format);
@@ -855,7 +860,7 @@ class Agent {
      * get value  array[key] / array[key][index]
      * @param  string $key
      * @param  array $index_array
-     * @param  array  $array
+     * @param  array|object  $array
      * @return string|null
      */
     protected function getValueInArray($key, $index_array, $array)
@@ -869,11 +874,14 @@ class Agent {
             return $var;
         } else {
             foreach ($index_array as $index) {
-                if ((is_array($var) || $var instanceof \ArrayObject ) && isset($var[$index])) {
+                if ((is_array($var) || $var instanceof \ArrayAccess ) && isset($var[$index])) {
                     $var = $var[$index];
                 } elseif (is_object($var) && property_exists($var, $index)) {
                     $var = $var->$index;
                 } else {
+                    return null;
+                }
+                if (is_null($var)) {
                     return null;
                 }
             }
