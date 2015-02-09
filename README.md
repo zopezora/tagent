@@ -383,6 +383,82 @@ if not exist function baz and is_callable, then call __invoke($params)
 
     <ul></ul>
 
+##Object Locator
+
+###Agent method  
+
+`$agent->set('name', $object, $module)`  
+`$agent->get('name', $module)`  
+`$agent->has('name', $module)`  
+
+If the module name is omitted, it defaults to GLOBAL.  
+
+###AbstractModule Object  
+
+`$Module->get('name', $object)`  
+`$Module->get('name')`  
+`$Module->get('name')`  
+
+Module name is resolved in the namespace of the class that inherits from abstractModule.  
+Therefore, a class that inherits abstractModule, it is necessary to always Module _ *** \ following namespace.  
+
+###AbstractModule  
+
+>Module.php  
+
+```php
+<?php
+namespace Module_Foo;
+
+class Module extends AbstractModule
+{
+  public function bar() {
+    $this->set('some', new someclass;
+    $this->get('some')->somemethod();
+
+  }
+}
+?>
+```
+
+###FactoryInterface
+
+implements FactoryInterface  
+
+
+>Module.php
+
+```php
+<?php
+namespace Module_Foo;
+
+class Module extends AbstractModule
+{
+  public function __construct($params) {
+    $this->set('some', new someclass($params);
+  }
+  public function method_bar($params) {
+    return $this->get('some')->someMethod();
+  }
+}
+?>
+```
+
+```php
+<?php
+class someclass implements FactoryInterface
+{
+  protected $property;
+  public function __construct($params) {
+    $this->property = $params;
+  }
+  public function factory() {
+    return new baz($this->property);
+  }
+}
+?>
+```
+
 ##Autoloader
 
 class ModuleLoader  

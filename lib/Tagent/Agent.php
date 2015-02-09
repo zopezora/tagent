@@ -376,6 +376,9 @@ class Agent {
         $this->modules[$module]['instance']  = false;
         $this->modules[$module]['variables'] = array();
         $this->modules[$module]['objects']   = array();
+        if ($module == 'GLOBAL') {
+            $this->globalModuleInit();
+        }
         $classname = $this->getModuleNamespace($module)."\\Module";
         if (class_exists($classname)) {
             $this->modules[$module]['instance'] = new $classname($params);
@@ -384,6 +387,14 @@ class Agent {
             $this->log(E_NOTICE, 'Not Found Module class. ('.$classname.")", true, $module);
         }
         return $this->modules[$module]['instance'];
+    }
+    /**
+     * global module initialize
+     * @return type
+     */
+    protected function globalModuleInit(){
+        $this->setVariable('_GET', $_GET ,'GLOBAL');
+        $this->setVariable('_POST', $_POST ,'GLOBAL');
     }
     /**
      * refresh module
@@ -611,7 +622,7 @@ class Agent {
 
             // inside Tag
             // attrs ['params'] / ['reserved'] / ['appends']
-            $attrs = $this->attributeParse($attr, $module, $methodVars, $loopVars); 
+            $attrs = $this->attributeParse($attr, $module, $methodVars, $loopVars, $line); 
             $reserved = $attrs['reserved'];
 
             // parse switch parse= on/off yes/no
@@ -660,7 +671,7 @@ class Agent {
                     $check .= " <li>Method variables\n".(string) new ArrayDumpTable($inMethodVars)."</li>";
                     $check .= " <li>Loop variables\n".(string) new ArrayDumpTable($inLoopVarsList)."</li>";
                     $check .= " <li>".$inModule." Module variables\n".(string) new ArrayDumpTable($this->getVariable(null, $inModule))."</li>";
-                    if ($inModule != 'GLOBAL') {
+                    if ($inModule !== 'GLOBAL') {
                         $check .= "<li>GLOBAL Module variables\n".(string) new ArrayDumpTable($this->getVariable(null, 'GLOBAL'))."</li>";
                     }
                     $check .= "</ul>";
@@ -668,8 +679,9 @@ class Agent {
                 }
                 // normaly single / multi by loop vars / zero loop , if loop return empty array.
                 foreach($inLoopVarsList as $key => $inLoopVars) {
-                    if ($key != '_NOLOOP_'){
-                        $inLoopVars['LOOPKEY']=$key;
+                    if ($key !== '_NOLOOP_') {
+                        $inLoopVars['LOOPKEY'] = $key;
+                        $this->log('loopkey', $key);
                     }
                     // recursive fetch inside
                     $output .= $this->fetch($inTag, $inModule, $inMethodVars, $inLoopVars, $line);
@@ -678,7 +690,7 @@ class Agent {
                 // close tag process
                 // close module
                 if ($flagModule && $forceCloseModule ) {
-                    if ($inModule != 'GLOBAL' ) {
+                    if ($inModule !== 'GLOBAL' ) {
                         $this->closeModule($inModule);
                     } else {
                         $this->log(E_WARNING, "GLOBAL module can not be forced close", true, $module);
@@ -711,7 +723,7 @@ class Agent {
      * @param  array  $loopVars
      * @return array
      */
-    protected function attributeParse($source, $module, $methodVars, $loopVars)
+    protected function attributeParse($source, $module, $methodVars, $loopVars, $line)
     {
         $attrs = array(
             'reserved' => array(
@@ -755,7 +767,7 @@ class Agent {
                         $value = $ret;
                     } else {
                         // un quate value, try for fetch {@VARIABLE}
-                        $value = $this->varFetch($value, $module, $methodVars, $loopVars);
+                        $value = $this->varFetch($value, $module, $methodVars, $loopVars, $line);
                     }
                     $attrs[$parentkey][$key] = $value;
                 } else {

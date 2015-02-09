@@ -5,7 +5,8 @@
  */
  namespace Tagent;
 
-interface FactoryInterface {
+interface FactoryInterface
+{
     /**
      * factory
      * @return instance

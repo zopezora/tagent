@@ -6,8 +6,8 @@
  */
 namespace Tagent;
 
-class ModuleLoader {
-
+class ModuleLoader
+{
     /**
      * @static
      * @var object

@@ -1,8 +1,13 @@
 <?php
+/**
+ * ArrayDump, part of Tagent
+ * @package Tagent
+ */
 namespace Tagent;
 
-class ArrayDumpTable {
-
+class ArrayDumpTable
+{
+    // const for css
     const CSS_CLASS     = 'arrayDump';
     const CSS_CLASS_KEY = 'arrayDumpKey';
 
@@ -29,8 +34,10 @@ class ArrayDumpTable {
 
 STYLE;
 
+    /**
+     * @var string   dump output buffer
+     */
     protected $output = "";
-
 
     public function __construct($var, $title = '')
     {

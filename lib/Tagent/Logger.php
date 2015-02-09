@@ -1,10 +1,14 @@
 <?php
+/**
+ * Logger, part of Tagent
+ * @package Tagent
+ */
 namespace Tagent;
 
-class Logger {
-
+class Logger
+{
+    // const for css
     const CSS_CLASS = 'tagentLog';
-
     const CSS_CLASS_ERROR   = 'tagentLogError';
     const CSS_CLASS_WARNING = 'tagentLogWarning';
     const CSS_CLASS_PARSE   = 'tagentLogParse';
@@ -47,14 +51,13 @@ class Logger {
         background-color : #ffc;
     }
     table.tagentLog tr.tagentLogUser {
-        background-color : #dfd;
+        background-color : #cfc;
     }
-
-    table.tagentLog td ul{
+    table.tagentLog td ul {
         margin  : 0 0 0 1em;
         padding : 0px;
     }
-    table.tagentLog td li{
+    table.tagentLog td li {
         margin : 5px 0
     }
 
@@ -62,8 +65,13 @@ class Logger {
 
 STYLE;
 
+    /**
+     * @var array
+     */
     protected $logs = array();
-
+    /**
+     * @var array
+     */
     protected $loglevel = array(
                                 E_ERROR      => 'ERROR',     // 1
                                 E_WARNING    => 'WARNING',   // 2
@@ -72,7 +80,7 @@ STYLE;
                                 E_DEPRECATED => 'CHECK',     // 8192
                                );
     /**
-     * log
+     * write log
      * @param  integer|string $level
      * @param  string $message
      * @param  string $module 
@@ -108,7 +116,10 @@ STYLE;
                     "escape"    => $escape,
         );
     }
-
+    /**
+     * report log
+     * @return string
+     */
     public function report()
     {
         $agent = Agent::getInstance();
@@ -155,10 +166,6 @@ STYLE;
         if ($checkflag) {
             $output .= ArrayDumpTable::STYLE;
         }
-
-
-
-
         return $output;
     }
 
