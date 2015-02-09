@@ -756,6 +756,7 @@ class Agent {
     protected function varFetch($source, $module, $methodVars, $loopVars, $line)
     {
         $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())(\w+)(?|\[(\w*)\]|())(?|\|(".self::OUTPUT_FORMATS.")|())}/i";
+        $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())(\w+)(?|((?:\[[^\[\]]+\])+)|())(?|\|(".self::OUTPUT_FORMATS.")|())}/i";
         $output = "";
         while (preg_match($pattern, $source, $matches, PREG_OFFSET_CAPTURE)){
             $match = $matches[0][0];
@@ -767,6 +768,8 @@ class Agent {
             $index   = $matches[3][0];
             $format  = $matches[4][0];
 
+            $index_array = $this->squarebracketExplode($index);
+
             // Before the string of match
             $output .= substr($source, 0, $pos);
             $this->line = ($line += substr_count(substr($source, 0, $pos), "\n"));
@@ -777,22 +780,22 @@ class Agent {
             $var = null;
             switch ($scope) {
                 case "*":
-                    $var = $this->getValueInArray($key, $index, $methodVars);
+                    $var = $this->getValueInArray($key, $index_array, $methodVars);
                     if (isset($var)){
                         break;
                     } // else no break
                 case "L": 
-                    $var = $this->getValueInArray($key, $index, $loopVars);
+                    $var = $this->getValueInArray($key, $index_array, $loopVars);
                     if (isset($var) || $scope == "L") { 
                         break;
                     } // else no break
                 case "M": 
-                    $var = $this->getValueInArray($key, $index, $this->getVariable(null, $module));
+                    $var = $this->getValueInArray($key, $index_array, $this->getVariable(null, $module));
                     if (isset($var) || $scope == "M" || $module == 'GLOBAL') {
                         break;
                     } // else no break
                 case "G":
-                    $var = $this->getValueInArray($key, $index, $this->getVariable(null, 'GLOBAL'));
+                    $var = $this->getValueInArray($key, $index_array, $this->getVariable(null, 'GLOBAL'));
                     break;
             }
             if ( is_null($var) && $index !== "") {
@@ -822,14 +825,42 @@ class Agent {
      * @param array  $array
      * @return string|null
      */
-    protected function getValueInArray($key, $index, $array)
+    protected function getValueInArray($key, $index_array, $array)
     {
-        if ($index == '') {
-            $var = (isset($array[$key])) ? $array[$key] : null;
+        if (isset($array[$key])) {
+            $var = $array[$key];
         } else {
-            $var = (isset($array[$key][$index])) ? $array[$key][$index] : null;
+            return null;
+        }
+        if (empty($index_array)) {
+            return $var;
+        } else {
+            foreach ($index_array as $index) {
+                if (isset($var[$index])) {
+                    $var = $var[$index];
+                } elseif (is_object($var) && property_exists($var, $index)) {
+                    $var = $var->$index;
+                } else {
+                    return null;
+                }
+            }
         }
         return $var;
+    }
+    /**
+     * suarebracketExplode   
+     * @param  string $source  [a1][a2]..
+     * @return array           array (a1,a2, ...)
+     */
+    protected function squarebracketExplode($source)
+    {
+
+        if (preg_match_all("/\[([^\[\]]+)\]/", $source, $matches)) {
+            print_r($matches[1]);
+            return $matches[1];
+        } else {
+            return array();
+        }
     }
     /**
      * convert format 
