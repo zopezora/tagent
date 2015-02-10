@@ -111,7 +111,7 @@ STYLE;
                 $output .= " </tr>\n";
             }
             if (! $var instanceof \itelator && ! $var instanceof \ArrayAccess) {
-                $output .= "<tr><td colspan=2 class=".self::CSS_CLASS_NOTE.">Not itelator.May not be able to rewind.</td></tr>";
+                $output .= "<tr><td colspan=2 class=".self::CSS_CLASS_NOTE.">Non-itelator object<br> may not be able to rewind.</td></tr>";
             }
         } else {
             $output .= "<tr>\n";
