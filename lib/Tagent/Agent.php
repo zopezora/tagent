@@ -12,13 +12,13 @@ use Tagent\FactoryInterface;
 class Agent {
 
     // config default
-    const AGENT_TAG       = "ag";
-    const AGENT_DIRECTORY = "ag/";
-    const DEBUG           = false;
-    const OB_START        = false;
-    const LINE_OFFSET     = 0;
-    const TEMPLATE_EXT    = ".tpl";
-    const LOG_REPORTING   = E_ALL;
+    const AGENT_TAG        = "ag";
+    const AGENT_DIRECTORY  = "ag/";
+    const DEBUG            = false;
+    const SHUTDOWN_DISPLAY = false;
+    const LINE_OFFSET      = 0;
+    const TEMPLATE_EXT     = ".tpl";
+    const LOG_REPORTING    = E_ALL;
 
     // const pattern
     const RESERVED_ATTRS  = 'module|method|loop|parse|close|refresh|newmodule|template|check';
@@ -49,6 +49,10 @@ class Agent {
      * @var callback ob_start callback
      */
     protected $buffercallback = null;
+    /**
+     * @var string output buffer
+     */
+    protected $buffer = '';
     /**
      * @var object  logger object
      */
@@ -99,13 +103,13 @@ class Agent {
     {
         // set config default 
         $this->configs = array (
-            "agent_tag"       => self::AGENT_TAG,
-            "agent_directory" => self::AGENT_DIRECTORY,
-            "debug"           => self::DEBUG,
-            "ob_start"        => self::OB_START,
-            "line_offset"     => self::LINE_OFFSET,
-            "template_ext"    => self::TEMPLATE_EXT,
-            "log_reporting"   => self::LOG_REPORTING,
+            "agent_tag"        => self::AGENT_TAG,
+            "agent_directory"  => self::AGENT_DIRECTORY,
+            "debug"            => self::DEBUG,
+            "shutdown_display" => self::SHUTDOWN_DISPLAY,
+            "line_offset"      => self::LINE_OFFSET,
+            "template_ext"     => self::TEMPLATE_EXT,
+            "log_reporting"    => self::LOG_REPORTING,
         );
         // Config override
         $this->configs = $this->arrayOverride( $this->configs, $config );
@@ -115,13 +119,15 @@ class Agent {
         }
         // Module Autoloader
         $this->loader = ModuleLoader::init($this->configs['agent_directory']);
-        // Output-Buffer start
+        // currnt directory for outbuffer callback
         $this->cwd = getcwd();
-        $this->configs['ob_start'] = $this->boolStr($this->configs['ob_start'], self::OB_START);
-        if ($this->configs['ob_start']) {
-            $callback = array($this, 'obBufferFlush');
+        // shutdown display
+        $this->configs['shutdown_display'] = $this->boolStr($this->configs['shutdown_display'], self::SHUTDOWN_DISPLAY);
+        if ($this->configs['shutdown_display']) {
+            $callback = array($this, 'obCallback');
             ob_start($callback);
-            $this->buffercallback = $callback;
+            ob_implicit_flush(false);
+            register_shutdown_function( array($this,'shutdown'));
         }
     }
     /**
@@ -500,7 +506,7 @@ class Agent {
         $filename .= $this->getModuleNamespace($module).$DS."Templates".$DS;
         $filename .= str_replace('_', $DS, $name).$this->getConfig('template_ext');
         if (($source = $this->readFile($filename)) !== false) {
-            $this->log('TEMPLATE', $filename, true, $module);
+            $this->log(E_NOTICE,"Read Template {$name}:({$filename})", true, $module);
             return $source;
         } else {
             $this->log(E_ERROR,"Can not load template:".$filename, true, $module);
@@ -509,19 +515,34 @@ class Agent {
     }
     // fetch & parse   --------------------------------------------------------------------
     /**
-     * callbak for ob_start()
-     * @param  string $buffer 
-     * @return string
+     * shutdown display   resister_shutdown_function
+     * @return type
      */
-    public function obBufferFlush($buffer)
-    {
-        chdir($this->cwd);
-        $output = $this->fetch($buffer);
-        if ($this->debug()) {
-            $output .= $this->logger->report($this->log_reporting());
-        }
-        return $output;
+    public function shutdown() {
+        $this->display();
     }
+    /**
+     * out buffer callback
+     * @param type $str 
+     * @return type
+     */
+    public function obCallback($str) {
+        chdir($this->cwd);
+        if ($this->debug()) {
+            $e = error_get_last();
+            if (! is_null($e)) {
+                $this->log($e['type'],"{$e['message']} in {$e['file']} ({$e['line']})",false,'PHP');
+
+                $ob   = $str;
+                $str  = $this->buffer;
+                $str .= "<hr>".$this->logger->report($this->log_reporting());
+                $str .= "<hr>".$ob;
+            }
+        }
+        return $str;
+    }
+
+
     /**
      * display output buffer   
      * @return void
@@ -533,7 +554,11 @@ class Agent {
             ob_clean();
             $this->display($source);
         } else {
-            ob_flush();
+            $source = ob_get_contents();
+            ob_clean();
+            $this->display($source);
+
+//            ob_flush();
         }
     }
     /**
@@ -585,6 +610,15 @@ class Agent {
         }
         return false;
     }
+
+
+
+    public function buffer($str) {
+        $this->buffer .= $str;
+        return $str;
+echo "buffer";
+    }
+
     /**
      * fetch tag parse . Retrieve nested 'agent tag' by recursive call.
      * @todo parameter object (module,methodVars,loopVars,loopkey,line)
@@ -601,9 +635,9 @@ class Agent {
             $resource = new ParseResource;
             $this->openModule('GLOBAL');
             $flagGlobal = true;
-            $this->line = 1;
+            $this->line = $resource->line = 1;
+            $this->buffer = '';
         }
-
         $tag = $this->getConfig("agent_tag"); // default ag
         $pattern = "/<".$tag."\s*((?:\"[^\"]*\"|'[^']*'|[^'\">])*?)\s*>((?:(?>[^<]+)|<(?!(".$tag."|\/".$tag.")(>|\s))|(?R))*)<\/".$tag.">/is";
         // output buffer
@@ -618,6 +652,7 @@ class Agent {
 
             // before Tag
             $output .= $this->varFetch(substr($source, 0, $pos), $resource);
+
             $this->line = ($resource->line += substr_count(substr($source, 0, $pos), "\n"));
 
             // attrs ['params'] / ['reserved'] / ['appends']
@@ -663,11 +698,8 @@ class Agent {
                                 : array('_NOLOOP_'=>$resource->loopVars);
                 // template
                 if (isset($reserved['template'])) {
-                    if ($template = $this->getTemplate($reserved['template'], $module)!==false) {
+                    if ( ($template = $this->getTemplate($reserved['template'], $module))!==false) {
                         $inTag = $template; // replace inTag to template
-                        $this->log(E_NOTICE,'Read template', true, $module);
-                    } else {
-                        $this->log(E_WARNING,'Not Fond template '.$reserved['template'], true, $module);
                     }
                 }
                 // check
@@ -796,7 +828,7 @@ class Agent {
             $index_array = $this->squarebracketExplode($index);
 
             // Before the string of match
-            $output .= substr($source, 0, $pos);
+            $output .= $this->buffer(substr($source, 0, $pos));
             $this->line = ($resource->line += substr_count(substr($source, 0, $pos), "\n"));
             // --- parse variable priority ---
             //  1.methodVars   2.$loopVars   3.moduleVars   4.globalmoduleVars
@@ -832,11 +864,11 @@ class Agent {
             }
             if (isset($var)) {
                 //format
-                $output .= $this->format($var, $format);
+                $output .= $this->buffer($this->format($var, $format));
             } else {
                 $this->log(E_PARSE,'Not Found Variable'.$match, true, $resource->module);
                 if ($this->debug()) {
-                    $output .= "*NotFound*".$match;
+                    $output .= $this->buffer("*NotFound*".$match);
                 } else {
                     // $output .= $match;
                 }
@@ -844,7 +876,7 @@ class Agent {
             // remaining non-match string 
             $source = substr($source, $pos + $len);
         }
-        $output .= $source;
+        $output .= $this->buffer($source);
         return $output;
     }
     /**

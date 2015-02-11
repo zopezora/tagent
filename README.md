@@ -39,7 +39,6 @@ Other attributes are used as a property  array $params  (see. Module,method,loop
 > template
 
 ```html
-<?php require (dirname($_SERVER['DOCUMENT_ROOT']).'/bootstrap.php'); ?>
 <h1>{@title}</h1>
 <ag module='Foo'>
  <p>{@bar}</p>
@@ -54,7 +53,6 @@ Other attributes are used as a property  array $params  (see. Module,method,loop
 > json in script jQuery
 
 ```html
-<?php require (dirname($_SERVER['DOCUMENT_ROOT']).'/bootstrap.php'); ?>
 <script>
   var obj = $.parseJSON('{@some|json}');
 </script>
@@ -109,6 +107,39 @@ return array(
 ?>
 ```
 
+##How to boot
+
+several ways   
+
+1. Preload bootstrap.php in .htaccess.    (Recommended)  
+1. require in the first line of each file   (Easy quick start)  
+3. Use front-controller                   (Controller is not included)  
+
+
+###1.Preload bootstrap.php
+
+by .htaccess  
+
+automatically preload bootstrap.php for file extension .tpl and .php(default)  
+
+>.htaccess  
+
+    AddType application/x-httpd-php .tpl
+    php_value auto_prepend_file "../bootstrap.php"
+  
+  
+
+*carefully. There are several risks*  
+
+.html .js .css and .php(default)  
+
+>.htaccess  
+
+    AddType application/x-httpd-php .tpl .html .js .css
+    php_value auto_prepend_file "../bootstrap.php"
+
+###2.require bootstrap
+
 >targetfiles.php
 
     <?php require (dirname($_SERVER['DOCUMENT_ROOT']).'/bootstrap.php'); ?>
@@ -116,61 +147,70 @@ return array(
     <!--- omission --->
     </html>
 
+If you want to match the log line number,It may be set in the configuration.  
 
-###For debug
+>config.php
+
+```php 
+    "line_offset"     => 1,      // for log reporting.  
+```
+
+###3.Front-controller
+
+Front-controller is not included in the Tagent  
+
+>index.php
+
+```php
+<?php
+chdir (__DIR__);
+require 'vendor/autoload.php';
+$agent = \Tagent\Agent::init( require 'config.php' );
+
+// ---  resolve $filename by your router ---
+
+$agent->fileDisplayFile($filename);
+?>
+```
+
+##Config
 
 ```php 
 <?php
 return array(
-    "debug"           => true,
-    "ob_start"        => false,
-    "agent_tag"       => "ag",
-    "agent_directory" => "ag/",
-    "line_offset"     => 1,       // for log reporting.
-    "template_ext"    => ".tpl",
+    "debug"            => false,
+    "shutdown_display" => true,
+    "agent_tag"        => "ag",
+    "agent_directory"  => "ag/",
+    "line_offset"      => 0,       // for log reporting.
+    "template_ext"     => ".tpl",
 );
 ?>
 ```
 
-ob_strt=false, add dispaly() method at the end of the file  
+    "debug"            => false,
 
->targetfiles.php  
+true, Log report to work  
 
-    <?php require (dirname($_SERVER['DOCUMENT_ROOT']).'/bootstrap.php'); ?>
-    <!DOCTYPE html>
-    <!--- omission --->
-    </html>
-    <?php $agent->display(); ?>
+    "shutdown_display" => true,
 
-or Tagent\Agent::getInstance()->display();  
+true,   `resister_shutdown_function ( Agent->display() )`  
 
-###Another bootstrap idea  
+    "agent_tag"        => "ag",
 
-by using .htaccess  
+Agent tag is `<ag></ag>`  
 
->config.php  
+    "agent_directory"  => "ag/",
 
-    "line_offset"     => 0,       // for log reporting.
+Location of the module  
 
-####Setting auto_prepend
+    "line_offset"      => 0,       // for log reporting.
 
-automatically preload bootstrap.php for file extension .tpl and .php  
+Adjust line-number for log reporting   
 
->.htaccess  
+    "template_ext"     => ".tpl",
 
-    AddType application/x-httpd-php .tpl
-    php_value auto_prepend_file "../bootstrap.php"
-
-####Challenge?  
-
-*Carefully. There are several risks*  
-
-automatically preload bootstrap.php for file extension .html .js .css and .php  
-
->.htaccess  
-
-    AddType application/x-httpd-php .html .js .css
-    php_value auto_prepend_file "../bootstrap.php"
+Template file extension.  
 
 
 ##Module control
@@ -178,11 +218,15 @@ automatically preload bootstrap.php for file extension .html .js .css and .php
 Agent has the following module elements.  
 
 1. Module instance.  
-2. Module Variables container.  
-3. Module Objects container.  
+2. Variables container.  
+3. Objects container.  
+4. Methods  
+5. Loops  
+6. Templates  
 
-When module be closed, also module elements are discarded.  
-However, until until parse is completed, the module is not closed unless explicitly force close.  
+When module is opend, module instance is created If a class module is present.  
+When module is closed, also module elements are discarded.  
+However, until parse is completed, the module is not closed unless explicitly force close.  
 
 
 ###Open/Close, Current Module transition  
@@ -216,14 +260,26 @@ after pearse compleate
 'GLOBAL' module can not be forced close.  
 
 Open module  
-1. Challenge to the instance of the module.  
-2. The Module elements are prepared in Agent container.  
+
+1. If Module class is present, it is instantiated .. class \Module_*module*\Module 
+2. The Module Variables & Objects containers are prepared .  
 
 Close module  
-1. Destruct module instance , if exists it  
-2. Remove the Module elements .  
 
-<ag method='bar'></ag>   The specified method of the current module.  
+1. Destruct module instance , if exists it  
+2. Remove the Module Variables & Objects containers .  
+
+
+ex.  
+
+    <ag module='Foo'>
+      <ag method='bar'></ag>  
+    </ag>
+
+same 
+
+    <ag module='Foo' method='bar'></ag>
+
 
 ###Module object  
 
@@ -231,8 +287,8 @@ Each module object 'Module.php' is option.  not required.
 
 Also option below.  
 
-* extends AbstractModule. Easy access to the module variables  
-* implements RefreshModuleInterface. for action module 'refresh'. 
+* extends AbstractModule. Easy access to the module variables & log  
+* implements RefreshModuleInterface. for action module 'refresh'.  
 
 >Module.php
 
@@ -278,30 +334,32 @@ class Module extends AbstractModule implements RefreshModuleInterface
 ###AbstractModule
 
 #####Variable Operation  
-* getVariable($key = null, $modulename = null)  
-* setVariable($key, $value, $modulename = null)  
-* setVariablesByArray(array $array, $modulename = null)  
+* getVariable($key)  
+* setVariable($key, $value)   // < if $vaule==null, unset. >
+* setVariablesByArray(array $array)  // < override by array >
+
+Same as next.`\Tagent\Agent::getInstance()->getVariable('key,'modulename');`  
 
 #####Object Locator  
-* get($name , $modulename = null)  
-* set($name, $object, $modulename = null)  
-* has($name, $modulename = null)  
+* get($name)  
+* set($name, $object)  // < if $object==null, unst >
+* has($name)  
 
-Same as next.`\Tagent\Agent::getInstance()->getVariable('key,'modulename');`
+Same as next.`\Tagent\Agent::getInstance()->get('key,'modulename');`  
 
-hoeever...  
-If you omit 2nd parameter $modulename, It is complemented by namespace of self class name .  
-ex. class Module_Foo\name  , automaticaly set modulename = 'Foo'  
-So easy to use  
-`$this->getVariable('key')` , `$this->get('key')`  etc...  
+#####log  
+* log($level,'message');
 
+Same as next.`\Tagent\Agent::getInstance()->log('key,'modulename',true,'modulename');`
 
 ###method
 
 `<ag module='Foo' method='bar'></ag>`
 
-First ,  seach `function method_bar()` in module object \Module_Foo\Module.  
-Second , search `class \Module_Foo\Methods\bar`  
+First ,  seach method `function method_bar()` in module object \Module_Foo\Module.  
+Second , search `class \Module_Foo\Methods\bar`  , call `method_bar()`  
+
+fix namespace and directory.
 
 >Module_Foo\Methods\bar.php
 
@@ -314,16 +372,17 @@ use Tagent\AbstractModule;
 
 class bar extends AbstractModule
 {
-    public function bar(array $params){
+    public function method_bar(array $params){
       return array();
     }
 } 
 ?>
 ```
 
-if not exist function bar and is_callable, then call __invoke($params)  
+call function `method_bar()` or call __invoke($params)  
+$params are non-reserved attributes.  
 
-example. return array['apple']='red'; ,  use {@apple}  
+return example. return array['apple']='red'; ,set method variable  {@apple}  
 
 ###loop
 
@@ -343,16 +402,17 @@ use Tagent\AbstractModule;
 
 class baz extends AbstractModule;
 {
-    public function baz(array $params){
+    public function loop_baz(array $params){
       return array(array());
     }
 } 
 ?>
 ```
 
-if not exist function baz and is_callable, then call __invoke($params)  
+call function `loop_baz()` or call __invoke($params)  
+$params are non-reserved attributes.  
 
-####Example_1.  return array( array() )
+####return example 1.array( array() )
 
 ```php
      $array[1]['color'] = 'Red';   
@@ -371,7 +431,7 @@ if not exist function baz and is_callable, then call __invoke($params)
 
 
 
-####Example_2  return empty array.  Available as display toggle
+####return example 2  return empty array.  Available as display toggle
 
     return array();
 
@@ -467,8 +527,6 @@ Config-key 'agent_directory' ( default : 'ag/'  )
 
 Namespace \Module_***    
 
-Psr-0  
-
 
 1. Classname Module_Foo\Module  
 require ag/Module_Foo/Module.php  
@@ -479,8 +537,6 @@ require ag/Module_Foo/Methods/bar.php
 3. Classname Module_Foo\Classes\Common_Baz
 require ag/Module_Foo/Classes/Common/Baz.php  
 
-
-clasname '_' replace to `DIRECTORY_SEPALATOR`.  
+**psr-0 compatible**  
+clasname '_' replace to `DIRECTORY_SEPALATOR`.    
 case-sensitive.  
-
-
