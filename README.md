@@ -30,7 +30,7 @@ PHP template parser.
 ```
 
 some attributes are reserved.  
-`module`,`method`,`loop`,`parse`,`close`,`refresh`,`newmodule`,`template`,`check`  
+`module`,`method`,`loop`,`parse`,`close`,`refresh`,`newmodule`,`template`,`check`,`debug`  
 
 Other attributes are used as a property  array $params  (see. Module,method,loop)  
 
@@ -50,12 +50,22 @@ Other attributes are used as a property  array $params  (see. Module,method,loop
 </ag>
 ```
 
-> json in script jQuery
+> json in script jQuery  html <script></script>
 
 ```html
+<ag module='Foo'>
 <script>
   var obj = $.parseJSON('{@some|json}');
 </script>
+</ag>
+```
+
+> json in script jQuery  .js  
+
+```js
+// <ag module='Foo'>
+  var obj = $.parseJSON('{@some|json}');
+//</ag>
 ```
 
 ##Directory
@@ -97,12 +107,13 @@ $agent = \Tagent\Agent::init( require 'config.php' );
 ```php 
 <?php
 return array(
-    "debug"           => false,
-    "ob_start"        => true,
-    "agent_tag"       => "ag",
-    "agent_directory" => "ag/",
-    "line_offset"     => 1,      // for log reporting.  
-    "template_ext"    => ".tpl",
+    "debug"            => false,
+    "shutdown_display" => true,
+    "agent_tag"        => "ag",
+    "agent_directory"  => "ag/",
+    "line_offset"      => 0,
+    "template_ext"     => ".tpl",
+    "log_reporting"    => E_ALL,
 );
 ?>
 ```
@@ -125,7 +136,7 @@ automatically preload bootstrap.php for file extension .tpl and .php(default)
 >.htaccess  
 
     AddType application/x-httpd-php .tpl
-    php_value auto_prepend_file "../bootstrap.php"
+    php_value auto_prepend_file "/path/to/bootstrap.php"
   
   
 
@@ -149,7 +160,7 @@ automatically preload bootstrap.php for file extension .tpl and .php(default)
 
 If you want to match the log line number,It may be set in the configuration.  
 
->config.php
+>config.php  
 
 ```php 
     "line_offset"     => 1,      // for log reporting.  
@@ -179,10 +190,11 @@ $agent->fileDisplayFile($filename);
 <?php
 return array(
     "debug"            => false,
+    "log_reporting"    => E_ALL,
     "shutdown_display" => true,
     "agent_tag"        => "ag",
     "agent_directory"  => "ag/",
-    "line_offset"      => 0,       // for log reporting.
+    "line_offset"      => 0,
     "template_ext"     => ".tpl",
 );
 ?>
@@ -191,6 +203,11 @@ return array(
     "debug"            => false,
 
 true, Log report to work  
+
+    "log_reporting"    => E_ALL,
+
+E_ERROR | E_WARNING | E_PARSE | E_NOTICE | E_DEPRECATED  
+'check' log is assigned to E_DEPRECATED  
 
     "shutdown_display" => true,
 

@@ -9,8 +9,8 @@ namespace Tagent;
 use Tagent\AbstractModule;
 use Tagent\FactoryInterface;
 
-class Agent {
-
+class Agent
+{
     // config default
     const AGENT_TAG        = "ag";
     const AGENT_DIRECTORY  = "ag/";
@@ -19,11 +19,6 @@ class Agent {
     const LINE_OFFSET      = 0;
     const TEMPLATE_EXT     = ".tpl";
     const LOG_REPORTING    = E_ALL;
-
-    // const pattern
-    const RESERVED_ATTRS  = 'module|method|loop|parse|close|refresh|newmodule|template|check';
-    const OUTPUT_FORMATS  = 'h|r|u|j|html|raw|url|json';
-    const VARIABLE_SCOPES = 'm|l|g|module|loop|global';
     /**
      * @static
      * @var object  static for singleton
@@ -60,7 +55,7 @@ class Agent {
     /**
      * @var integer  line counter
      */
-    protected $line = 0;
+    public $line = 0;
     /**
      * @var integer  loglevel
      */
@@ -112,17 +107,15 @@ class Agent {
             "log_reporting"    => self::LOG_REPORTING,
         );
         // Config override
-        $this->configs = $this->arrayOverride( $this->configs, $config );
+        $this->configs = Utility::arrayOverride( $this->configs, $config );
         // Logger
-        if ($this->debug()) {
-            $this->logger = new Logger;
-        }
+        $this->debug($this->configs['debug']);
         // Module Autoloader
         $this->loader = ModuleLoader::init($this->configs['agent_directory']);
         // currnt directory for outbuffer callback
         $this->cwd = getcwd();
         // shutdown display
-        $this->configs['shutdown_display'] = $this->boolStr($this->configs['shutdown_display'], self::SHUTDOWN_DISPLAY);
+        $this->configs['shutdown_display'] = Utility::boolStr($this->configs['shutdown_display'], self::SHUTDOWN_DISPLAY);
         if ($this->configs['shutdown_display']) {
             $callback = array($this, 'obCallback');
             ob_start($callback);
@@ -154,9 +147,16 @@ class Agent {
      * @param  bool|string|null  $bool  true|false  'on|off' / 'yes|no' / 'y|n' / null
      * @return bool true|false
      */
-    public function debug()
+    public function debug($debug = null)
     {
-        return $this->boolStr($this->configs['debug'], false);
+        if (! is_null($debug)) {
+            $this->configs['debug'] = Utility::boolStr($debug, false);
+            if ($this->configs['debug'] && is_null($this->logger)) {
+                $this->logger = new Logger();
+            }
+        } else {
+            return Utility::boolStr($this->configs['debug'], false);
+        }
     }
     /**
      * log reporting level
@@ -500,7 +500,8 @@ class Agent {
      * @param  string $module
      * @return string | false
      */
-    public function getTemplate($name, $module = 'GLOBAL') {
+    public function getTemplate($name, $module = 'GLOBAL')
+    {
         $DS = DIRECTORY_SEPARATOR;
         $filename = $this->getConfig('agent_directory');
         $filename .= $this->getModuleNamespace($module).$DS."Templates".$DS;
@@ -518,7 +519,8 @@ class Agent {
      * shutdown display   resister_shutdown_function
      * @return type
      */
-    public function shutdown() {
+    public function shutdown()
+    {
         $this->display();
     }
     /**
@@ -526,40 +528,23 @@ class Agent {
      * @param type $str 
      * @return type
      */
-    public function obCallback($str) {
+    public function obCallback($str)
+    {
         chdir($this->cwd);
         if ($this->debug()) {
             $e = error_get_last();
             if (! is_null($e)) {
                 $this->log($e['type'],"{$e['message']} in {$e['file']} ({$e['line']})",false,'PHP');
 
-                $ob   = $str;
-                $str  = $this->buffer;
-                $str .= "<hr>".$this->logger->report($this->log_reporting());
-                $str .= "<hr>".$ob;
+                if ($e[type]==E_ERROR) {
+                    $ob   = $str;
+                    $str  = $this->buffer;
+                    $str .= "<hr>".$ob;
+                    $str .= "<hr>".$this->logger->report($this->log_reporting());
+                }
             }
         }
         return $str;
-    }
-
-
-    /**
-     * display output buffer   
-     * @return void
-     */
-    protected function bufferDisplay()
-    {
-        if (is_null($this->buffercallback)){
-            $source = ob_get_contents();
-            ob_clean();
-            $this->display($source);
-        } else {
-            $source = ob_get_contents();
-            ob_clean();
-            $this->display($source);
-
-//            ob_flush();
-        }
     }
     /**
      * dispaly source.  if no source argument, display output buffer
@@ -569,12 +554,11 @@ class Agent {
     public function display($source = null)
     {
         if (is_null($source)) {
-            $this->bufferDisplay();
-        } else {
-            echo $this->fetch($source);
-            if ($this->debug()) {
-                echo $this->logger->report($this->log_reporting());
-            }
+            $source = ob_get_clean();
+        }
+        echo $this->fetch($source);
+        if ($this->debug()) {
+            echo $this->logger->report($this->log_reporting());
         }
     }
     /**
@@ -610,15 +594,11 @@ class Agent {
         }
         return false;
     }
-
-
-
-    public function buffer($str) {
+    public function buffer($str)
+    {
         $this->buffer .= $str;
         return $str;
-echo "buffer";
     }
-
     /**
      * fetch tag parse . Retrieve nested 'agent tag' by recursive call.
      * @todo parameter object (module,methodVars,loopVars,loopkey,line)
@@ -651,59 +631,61 @@ echo "buffer";
             $len   = strlen($match);
 
             // before Tag
-            $output .= $this->varFetch(substr($source, 0, $pos), $resource);
+            $output .= $resource->varFetch(substr($source, 0, $pos));
 
             $this->line = ($resource->line += substr_count(substr($source, 0, $pos), "\n"));
 
             // attrs ['params'] / ['reserved'] / ['appends']
-            $attrs = $this->attributeParse($attr, $resource);
-            $reserved = $attrs['reserved'];
+            $attrs = new Attribute($attr, $resource);
 
             // parse switch parse= on/off yes/no y/n
-            if ( ! $this->boolStr($reserved['parse'], true) ) {
+            if ( ! Utility::boolStr($attrs->reserved['parse'], true) ) {
                 // parse = no
                 $output .= $inTag;
                 $this->log(E_NOTICE,'Parse: No', true, $module);
             } else {
                 // parse = yes
                 $inResource = new ParseResource($resource->line);
-                $params = $attrs['params'];
+                // debug
+                if (isset($attrs->reserved['debug'])) {
+                    $this->debug(Utility::boolStr($attrs->reserved['debug']));
+                }
                 //module control
-                if (isset($reserved["module"])) {
-                    $module = $inResource->module = $reserved["module"];
-                    $flagModule  = $this->openModule($module, $params);
+                if (isset($attrs->reserved["module"])) {
+                    $module = $inResource->module = $attrs->reserved["module"];
+                    $flagModule  = $this->openModule($module, $attrs->params);
                 } else {
                     $module = $inResource->module = $resource->module;
                     $flagModule  = false;
                 }
                 // close
-                $forceClose = $this->boolStr($reserved['close'], false);
+                $forceClose = Utility::boolStr($attrs->reserved['close'], false);
                 // refresh
-                if ($this->boolStr($reserved['refresh'], false)) {
-                    $this->refreshModule($module, $params);
+                if (Utility::boolStr($attrs->reserved['refresh'], false)) {
+                    $this->refreshModule($module, $attrs->params);
                 }
                 // method vars
-                if (isset($reserved["method"])) {
-                    $inResource->methodVars = $this->getMethod($reserved["method"], $module, $params);
+                if (isset($attrs->reserved["method"])) {
+                    $inResource->methodVars = $this->getMethod($attrs->reserved["method"], $module, $attrs->params);
                 } else {
                     $inResource->methodVars = $resource->methodVars;
                 }
                 // appends vars
-                foreach ($attrs['appends'] as $key => $value) {
+                foreach ($attrs->appends as $key => $value) {
                     $inResource->methodVars[$key] = $value;
                 }
                 // loop vars
-                $inLoopVarsList = (isset($reserved["loop"]))
-                                ? $this->getLoop($reserved["loop"], $module, $params)
+                $inLoopVarsList = (isset($attrs->reserved["loop"]))
+                                ? $this->getLoop($attrs->reserved["loop"], $module, $attrs->params)
                                 : array('_NOLOOP_'=>$resource->loopVars);
                 // template
-                if (isset($reserved['template'])) {
-                    if ( ($template = $this->getTemplate($reserved['template'], $module))!==false) {
+                if (isset($attrs->reserved['template'])) {
+                    if ( ($template = $this->getTemplate($attrs->reserved['template'], $module))!==false) {
                         $inTag = $template; // replace inTag to template
                     }
                 }
                 // check
-                if ($this->boolStr($reserved['check'], false)) {
+                if (Utility::boolStr($attrs->reserved['check'], false)) {
                     $this->checkResourceLog($inResource, $inLoopVarsList);
                 }
                 // normaly single / multi by loop vars / zero loop , if loop return empty array.
@@ -728,7 +710,7 @@ echo "buffer";
         } // end of while serch <tag>
 
         // remaining non-match string 
-        $output .= $this->varFetch($source, $resource);
+        $output .= $resource->varFetch($source);
         $this->line = ( $resource->line += substr_count($source, "\n"));
 
         // post-process global fetch
@@ -739,226 +721,6 @@ echo "buffer";
                 $this->closeModule($modulename);
             }
             $this->line = 0;
-        }
-        return $output;
-    }
-    /**
-     * parse tag attribute    ex. attr1="foo" attr2={@m:id|r@}
-     * @param  string $source
-     * @param  object $resource
-     * @return array
-     */
-    protected function attributeParse($source, ParseResource $resource)
-    {
-        $attrs = array(
-            'reserved' => array(
-                "module"        => null,
-                "newmodule"     => null,
-                "refresh"       => null,
-                "close"         => null,
-                "method"        => null,
-                "loop"          => null,
-                "parse"         => null,
-                "template"      => null,
-                "check"         => null,
-            ),
-            'params'  => array(),
-            'appends' => array(),
-        );
-        $pattern = "/(?:\"[^\"]*\"|'[^']*'|[^'\"\s]+)+/";
-        if (preg_match_all( $pattern,$source,$matches)) {
-            $array = $matches[0];
-            $valid_pattern    = "/(?|(\w+)|(\[\w+\]))=(\"[^\"]*\"|'[^']*'|[^'\"\s]+)/";
-            $reserved_pattern = "/^(".self::RESERVED_ATTRS.")$/i";
-            $varkey_pattern   = "/^\[(\w+)\]$/i";
-
-            foreach($array as $v) {
-                // valid attribute
-                if (preg_match($valid_pattern, $v, $sp_match)){
-                    $key   = $sp_match[1];   // foo or [foo]
-                    $value = $sp_match[2];   // 'bar' or {@name}
-
-                    // sepalate reserved attribute
-                    $parentkey = 'params';
-                    if (preg_match($reserved_pattern, $key, $attr_match)){
-                        $parentkey = 'reserved';
-                        $key = strtolower($key);
-                    } else {
-                        if (preg_match($varkey_pattern, $key, $varkey_match)) {
-                            $parentkey = 'appends';
-                            $key = $varkey_match[1];
-                        }
-                    }
-                    if (($ret=$this->removeQuote($value)) !== false) {
-                        $value = $ret;
-                    } else {
-                        // un quate value, try for fetch {@VARIABLE}
-                        $value = $this->varFetch($value, $resource);
-                    }
-                    $attrs[$parentkey][$key] = $value;
-                } else {
-                    // Unvalid attribute
-                    $this->log(E_WARNING, "Unvalid attribute (".$v.")", true, $resource->module);
-                }
-            } // end of foreach
-        }
-        return $attrs;
-    }
-    /**
-     * variable fetch .  search {@scope:name|format} , deployment to the value
-     * @param  string $source 
-     * @param  object $resource
-     * @return string
-     */
-    protected function varFetch($source, ParseResource $resource)
-    {
-        $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())(\w+)(?|\[(\w*)\]|())(?|\|(".self::OUTPUT_FORMATS.")|())}/i";
-        $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())(\w+)(?|((?:\[[^\[\]]+\])+)|())(?|\|(".self::OUTPUT_FORMATS.")|())}/i";
-        $output = "";
-        while (preg_match($pattern, $source, $matches, PREG_OFFSET_CAPTURE)){
-            $match = $matches[0][0];
-            $pos   = $matches[0][1];
-            $len   = strlen($match);
-
-            $scope   = $matches[1][0];
-            $key     = $matches[2][0];
-            $index   = $matches[3][0];
-            $format  = $matches[4][0];
-
-            $index_array = $this->squarebracketExplode($index);
-
-            // Before the string of match
-            $output .= $this->buffer(substr($source, 0, $pos));
-            $this->line = ($resource->line += substr_count(substr($source, 0, $pos), "\n"));
-            // --- parse variable priority ---
-            //  1.methodVars   2.$loopVars   3.moduleVars   4.globalmoduleVars
-            $scope = ($scope == "") ? "*" : strtoupper($scope[0]);
-
-            $var = null;
-            switch ($scope) {
-                case "*":
-                    $var = $this->getValueByDeepkey($key, $index_array, $resource->methodVars);
-                    if (isset($var)){
-                        break;
-                    } // else no break
-                case "L":
-                    if ($key=='LOOPKEY') {
-                        $var = $resource->loopkey;
-                    } else {
-                        $var = $this->getValueByDeepkey($key, $index_array, $resource->loopVars);
-                    }
-                    if (isset($var) || $scope == "L") { 
-                        break;
-                    } // else no break
-                case "M": 
-                    $var = $this->getValueByDeepkey($key, $index_array, $this->getVariable(null, $resource->module));
-                    if (isset($var) || $scope == "M" || $resource->module == 'GLOBAL') {
-                        break;
-                    } // else no break
-                case "G":
-                    $var = $this->getValueByDeepkey($key, $index_array, $this->getVariable(null, 'GLOBAL'));
-                    break;
-            }
-            if ( is_null($var) && $index !== "") {
-                $this->log(E_PARSE, 'Not Found Variable array index ['.$index.'] is Unvalid '.$match, true, $resource->module);
-            }
-            if (isset($var)) {
-                //format
-                $output .= $this->buffer($this->format($var, $format));
-            } else {
-                $this->log(E_PARSE,'Not Found Variable'.$match, true, $resource->module);
-                if ($this->debug()) {
-                    $output .= $this->buffer("*NotFound*".$match);
-                } else {
-                    // $output .= $match;
-                }
-            }
-            // remaining non-match string 
-            $source = substr($source, $pos + $len);
-        }
-        $output .= $this->buffer($source);
-        return $output;
-    }
-    /**
-     * get value  array[key] / array[key][index]
-     * @param  string $key
-     * @param  array $index_array
-     * @param  array|object  $array
-     * @return string|null
-     */
-    protected function getValueByDeepkey($key, $key_array, $array)
-    {
-        if (isset($array[$key])) {
-            $var = $array[$key];
-        } else {
-            return null;
-        }
-        if (empty($key_array)) {
-            return $var;
-        } else {
-            foreach ($key_array as $index) {
-                if ((is_array($var) || $var instanceof \ArrayAccess ) && isset($var[$index])) {
-                    $var = $var[$index];
-                } elseif (is_object($var) && property_exists($var, $index)) {
-                    $var = $var->$index;
-                } else {
-                    return null;
-                }
-                if (is_null($var)) {
-                    return null;
-                }
-            }
-        }
-        return $var;
-    }
-    /**
-     * suarebracketExplode   
-     * @param  string $source  [a1][a2]...
-     * @return array           array (a1,a2, ...)
-     */
-    protected function squarebracketExplode($source)
-    {
-        if (preg_match_all("/\[([^\[\]]+)\]/", $source, $matches)) {
-            return $matches[1];
-        }
-        return array();
-    }
-    /**
-     * convert format 
-     * @param  mixed  $source  string|array
-     * @param  string $format 
-     * @return string|false
-     */
-    protected function format($source, $format = 'h')
-    {
-        if ($source === false) {
-            return false;
-        }
-        if (is_object($source) && ! method_exists($source,'__toString')) {
-            $this->log(E_PARSE,'Cannot convert from object ('.get_class($source).') to string ');
-            if ($this->debug()) {
-                return "*Object*";
-            }
-            return false;
-        }
-
-        $format = ($format=="") ? "h" : strtolower($format)[0];
-        switch ($format) {
-            case 'h':
-                $output = htmlspecialchars((string) $source, ENT_QUOTES, 'UTF-8');
-                break;
-            case 'r':
-                $output = (string) $source;
-                break;
-            case 'u':
-                $output = urlencode((string) $source);
-                break;
-            case 'j':
-                $output = json_encode($source);
-                break;
-            default:
-                $this->log(E_WARNING, "Unvalid format (".$format.")");
-                $output = $this->format($source, 'h');
         }
         return $output;
     }
@@ -987,7 +749,8 @@ echo "buffer";
             $this->logger->log($level, $message, $escape, $module);
         }
     }
-    public function checkResourceLog(ParseResource $resource, $inLoopVarsList) {
+    public function checkResourceLog(ParseResource $resource, $inLoopVarsList)
+    {
         if ($this->debug()) {
             $module = $resource->module;
             $check  = "<ul>";
@@ -1000,72 +763,6 @@ echo "buffer";
             $check .= "</ul>";
             $this->log(E_DEPRECATED, $check, false, $module);
         }
-    }
-    // ---- Utility -------------------------------------------------
-    // @todo review  move to static class
-    /**
-     * remove Quote ' ' or " "
-     * @param  string $source 
-     * @return string|false
-     */
-    protected function removeQuote($source)
-    {
-        $pattern = "/^(?|\"([^\"]*)\"|'([^']*)')$/";
-        if (preg_match( $pattern, $source, $matches))
-        {
-            return $matches[1];
-        }
-        return false;
-    }
-    /**
-     * boolStr
-     * @param  string $str 
-     * @param  bool   $default 
-     * @return bool
-     */
-    public function boolStr($str, $default = false)
-    {
-        if (is_bool($str)){
-            return $str;
-        }
-        //  yes|no , y|n  ,on|off    other return default
-        if (! is_string($str)) {
-            return $default;
-        }
-        if (preg_match("/^(y|on|yes)$/i",$str)) {
-            return true;
-        }
-        if (preg_match("/^(n|no|off)$/i",$str)) {
-            return false;
-        }
-        return $default;
-    }
-    /**
-     * nearly array_merge. 
-     * some difference  append int-key renumbering-key, override same key's value by source.
-     * @see    __construct()
-     * @param  array $root
-     * @param  array $source 
-     * @return array
-     */
-    public function arrayOverride(array $root, array $source)
-    {
-        foreach ($source as $key => $value ) {
-            if (array_key_exists($key, $root)) {
-                if (is_int($key)) {
-                    $root[] = $value;
-                } else {
-                    if (is_array($value)) {
-                        $root[$key] = $this->arrayOverride($root[$key], $value);
-                    } else {
-                        $root[$key] = $value;
-                    }
-                }
-            } else {
-                $root[$key] = $value;
-            }
-        }
-        return $root;
     }
 
 } // end of Agent class 
