@@ -93,7 +93,7 @@ class ParseResource {
                         break;
                     } // else no break
                 case "G":
-                    $var = Utility::getValueByDeepkey($key_array, $this->getVariable(null, 'GLOBAL'));
+                    $var = Utility::getValueByDeepkey($key_array, $agent->getVariable(null, 'GLOBAL'));
                     break;
             }
             if ( is_null($var) && $index !== "") {
