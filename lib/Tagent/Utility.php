@@ -61,7 +61,7 @@ class Utility
                     $root[] = $value;
                 } else {
                     if (is_array($value)) {
-                        $root[$key] = $this->arrayOverride($root[$key], $value);
+                        $root[$key] = self::arrayOverride($root[$key], $value);
                     } else {
                         $root[$key] = $value;
                     }

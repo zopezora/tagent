@@ -122,13 +122,13 @@ $agent = \Tagent\Agent::init( require 'config.php' );
 ```php 
 <?php
 return array(
-    "debug"            => false,
-    "shutdown_display" => true,
-    "agent_tag"        => "ag",
-    "agent_directory"  => "ag/",
-    "line_offset"      => 0,
-    "template_ext"     => ".tpl",
-    "log_reporting"    => E_ALL,
+    "debug"             => false,
+    "shutdown_display"  => true,
+    "agent_tag"         => "ag",
+    "agent_directories" => array ("ag/"),
+    "line_offset"       => 0,
+    "template_ext"      => ".tpl",
+    "log_reporting"     => E_ALL,
 );
 ?>
 ```
@@ -204,13 +204,13 @@ $agent->fileDisplayFile($filename);
 ```php 
 <?php
 return array(
-    "debug"            => false,
-    "log_reporting"    => E_ALL,
-    "shutdown_display" => true,
-    "agent_tag"        => "ag",
-    "agent_directory"  => "ag/",
-    "line_offset"      => 0,
-    "template_ext"     => ".tpl",
+    "debug"             => false,
+    "log_reporting"     => E_ALL,
+    "shutdown_display"  => true,
+    "agent_tag"         => "ag",
+    "agent_directories" => array("ag/"),
+    "line_offset"       => 0,
+    "template_ext"      => ".tpl",
 );
 ?>
 ```
@@ -555,7 +555,7 @@ class someclass implements FactoryInterface
 
 class ModuleLoader  
 
-Config-key 'agent_directory' ( default : 'ag/'  )
+Config-key 'agent_directories' = array( 'ag/' ) // default
 
 Namespace \Module_***    
 

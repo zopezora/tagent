@@ -15,9 +15,9 @@ class ModuleLoader
     public static $loader = null;
 
     /**
-     * @var string agent direcrory
+     * @var array agent direcrory
      */
-    private $agentDirectory = "";
+    private $agentDirectorys = array();
     /**
      * init
      * @param  string $agentDirectory 
@@ -38,7 +38,7 @@ class ModuleLoader
     private function __construct($agentDirectory)
     {
         if (isset($agentDirectory)) {
-            $this->agentDirectory = $agentDirectory;
+            $this->agentDirectorys = $agentDirectory;
         }
         spl_autoload_register(array($this,'LoadModule'));
     }
@@ -58,13 +58,17 @@ class ModuleLoader
             $className = substr($className, $lastNsPos + 1);
         }
         if ( strpos($namespace,'Module_')==0 ) {
-            $fileName  = $this->agentDirectory.str_replace('\\', DIRECTORY_SEPARATOR, $namespace).DIRECTORY_SEPARATOR;
+            $fileName  = str_replace('\\', DIRECTORY_SEPARATOR, $namespace).DIRECTORY_SEPARATOR;
             $fileName .= str_replace('_', DIRECTORY_SEPARATOR, $className).'.php'; // psr-0
 //            $fileName .= $className;
-            if (is_readable($fileName)) {
-                require $fileName;
-                return true;
+
+            foreach ($this->agentDirectorys as $directory) {
+                if (is_readable($directory.$fileName)) {
+                    require $directory.$fileName;
+                    return true;
+                }
             }
         }
     }
+
 }

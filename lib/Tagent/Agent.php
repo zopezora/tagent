@@ -98,20 +98,25 @@ class Agent
     {
         // set config default 
         $this->configs = array (
-            "agent_tag"        => self::AGENT_TAG,
-            "agent_directory"  => self::AGENT_DIRECTORY,
-            "debug"            => self::DEBUG,
-            "shutdown_display" => self::SHUTDOWN_DISPLAY,
-            "line_offset"      => self::LINE_OFFSET,
-            "template_ext"     => self::TEMPLATE_EXT,
-            "log_reporting"    => self::LOG_REPORTING,
+            "agent_tag"         => self::AGENT_TAG,
+            "agent_directories" => array (self::AGENT_DIRECTORY),
+            "debug"             => self::DEBUG,
+            "shutdown_display"  => self::SHUTDOWN_DISPLAY,
+            "line_offset"       => self::LINE_OFFSET,
+            "template_ext"      => self::TEMPLATE_EXT,
+            "log_reporting"     => self::LOG_REPORTING,
         );
+        // agent direcrories
+        if (array_key_exists('agent_directories', $config) && ! is_array($config['agent_directories'])) {
+            $config['agent_directories'] = (array) $config['agent_directories'];
+        }
         // Config override
         $this->configs = Utility::arrayOverride( $this->configs, $config );
+        $this->configs['agent_directories'] = array_unique($this->configs['agent_directories']);
         // Logger
         $this->debug($this->configs['debug']);
         // Module Autoloader
-        $this->loader = ModuleLoader::init($this->configs['agent_directory']);
+        $this->loader = ModuleLoader::init($this->configs['agent_directories']);
         // currnt directory for outbuffer callback
         $this->cwd = getcwd();
         // shutdown display
@@ -504,15 +509,18 @@ class Agent
     public function getTemplate($name, $module = 'GLOBAL')
     {
         $DS = DIRECTORY_SEPARATOR;
-        $filename = $this->getConfig('agent_directory');
-        $filename .= $this->getModuleNamespace($module).$DS."Templates".$DS;
+        $directories = $this->getConfig('agent_directories');
+        $filename = $this->getModuleNamespace($module).$DS."Templates".$DS;
         $filename .= str_replace('_', $DS, $name).$this->getConfig('template_ext');
-        if (($source = $this->readFile($filename)) !== false) {
-            $this->log(E_NOTICE,"Read Template {$name}:({$filename})", true, $module);
-            return $source;
-        } else {
-            $this->log(E_ERROR,"Can not load template:".$filename, true, $module);
+
+        foreach($directories as $directory) {
+            if (($source = $this->readFile($directory.$filename)) !== false) {
+                $this->log(E_NOTICE,"Read Template {$name}:({$filename})", true, $module);
+                return $source;
+            }
         }
+
+        $this->log(E_ERROR,"Can not load template:".$filename, true, $module);
         return false;
     }
     // fetch & parse   --------------------------------------------------------------------
