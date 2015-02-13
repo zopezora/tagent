@@ -476,10 +476,11 @@ class Agent
             $this->log(E_NOTICE, 'Call Module_'.$module.'->'.$methodname, true, $module);
             return $md->$methodname($params);
         }
-        // second, search method class   \Module_module\Method or Loops\name
+        // second, search method class   \Module_module\Methods or Loops\name
         $classname = $this->getModuleNamespace($module)."\\".ucfirst($kind)."s\\".$name;
         if (class_exists($classname)) {
             $instance = new $classname($params);
+            $this->log(E_NOTICE, "Create {$kind} object: {$classname} search:{$methodname}", true, $module);
             if (method_exists($instance, $methodname)) {
                 $this->log(E_NOTICE, 'Call '.$classname.'->'.$methodname, true, $module);
                 return $instance->$methodname($params);
@@ -488,10 +489,10 @@ class Agent
                 $this->log(E_NOTICE, 'Callable '.$kind.' '.$classname.'()', true, $module);
                 return $instance($params);
             }
-            $this->log(E_WARNING,$king.': '.$classname.' Not found '.$methodname.',and Not Callable.', true, $module);
+            $this->log(E_WARNING,$kind.': '.$classname.' Not found '.$methodname.',and Not Callable.', true, $module);
             return $default;
         }
-        $this->log(E_WARNING,'Not Found call ('.$module.'->'.$methodname.')', true, $module);
+        $this->log(E_WARNING,'Not Found call ('.$module.'->'.$methodname.') and '.$classname, true, $module);
         return $default;
     }
     /**
@@ -617,6 +618,7 @@ class Agent
             $flagGlobal = true;
             $this->line = $resource->line = 1;
             $this->buffer = '';
+            $this->log(E_NOTICE,'---------- PRE PROCESS ----------',true,$resource->module);
         }
         $tag = $this->getConfig("agent_tag"); // default ag
         $pattern = "/<".$tag."\s*((?:\"[^\"]*\"|'[^']*'|[^'\">])*?)\s*>((?:(?>[^<]+)|<(?!(".$tag."|\/".$tag.")(>|\s))|(?R))*)<\/".$tag.">/is";
@@ -714,10 +716,11 @@ class Agent
         $this->line = ( $resource->line += substr_count($source, "\n"));
 
         // post-process global fetch
-        if ($flagGlobal){
+        if ($flagGlobal) {
+            $this->log(E_NOTICE,'---------- POST PROCESS ----------',true,$resource->module);
             // unset all module instance 
             $modules = array_reverse($this->modules);
-            foreach (array_keys($modules) as $modulename){
+            foreach (array_keys($modules) as $modulename) {
                 $this->closeModule($modulename);
             }
             $this->line = 0;

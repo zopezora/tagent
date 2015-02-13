@@ -59,7 +59,7 @@ class ParseResource {
             $format  = $matches[4][0];
 
             $key_array = array($key);
-            if (preg_match_all("/\[([^\[\]]+)\]/", $source, $matches)) {
+            if (preg_match_all("/\[([^\[\]]+)\]/", $index, $matches)) {
                 foreach ($matches[1] as $match) {
                     $key_array[] = $match;
                 }
