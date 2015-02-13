@@ -30,7 +30,7 @@ PHP template parser.
 ```
 
 some attributes are reserved.  
-`module`,`method`,`loop`,`parse`,`close`,`refresh`,`newmodule`,`template`,`check`,`debug`  
+`module`,`method`,`loop`,`parse`,`close`,`refresh`,`newmodule`,`template`,`check`,`debug`,`header`  
 
 Other attributes are used as a property  array $params  (see. Module,method,loop)  
 
@@ -68,9 +68,23 @@ Other attributes are used as a property  array $params  (see. Module,method,loop
 //</ag>
 ```
 
-##Directory
+> css.php
 
-example : use composer  
+```css
+/* <ag header='Content-Type: text/css; charset=utf-8'><> */
+/* <ag module='Foo' method='bar' border='1px solid #aaa'> */
+div.bar {
+  border : {@border};
+}
+div.baz {
+  border : {@border};
+}
+/* </ag> */
+```
+
+##Basic Directory Structure 
+
+use composer 
 
 ```
 [project] - [public] - WEB DOCUMENT ROOT
@@ -79,17 +93,18 @@ example : use composer
           |- [ag]-[Module_GLOBAL] -[Methods]  - *.php 
           |      |                 [Loops]    - *.php
           |      |                 [Templates]- *.tpl
-          |      |                 [-some-]   - *.php
+          |      |                 [......]   - *.php
           |      |                 Module.php
           |      |
           |      |-[Module_Foo]----[Methods]  - *.php
           |                        [Loops]    - *.php
           |                        [Templates]- *.tpl
-          |                        [-some-]   - *.php
+          |                        [......]   - *.php
           |                        Module.php
           |- bootstrap.php
           |- config.php
           |- [vendor]-[tagent]-[tagent]-[lib]-Agent.php
+                                              (......)
 ```
 
 >bootstap.php

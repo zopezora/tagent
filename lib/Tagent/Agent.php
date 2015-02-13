@@ -652,6 +652,10 @@ class Agent
                 if (isset($attrs->reserved['debug'])) {
                     $this->debug(Utility::boolStr($attrs->reserved['debug']));
                 }
+                // header
+                if (isset($attrs->reserved["header"])) {
+                    header($attrs->reserved["header"]);
+                }
                 //module control
                 if (isset($attrs->reserved["module"])) {
                     $module = $inResource->module = $attrs->reserved["module"];
