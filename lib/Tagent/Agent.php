@@ -8,6 +8,8 @@ namespace Tagent;
 
 use Tagent\AbstractModule;
 use Tagent\FactoryInterface;
+use Tagent\RefreshModuleInterface;
+use Tagent\CloseModuleInterface;
 
 class Agent
 {
@@ -19,6 +21,12 @@ class Agent
     const LINE_OFFSET      = 0;
     const TEMPLATE_EXT     = ".tpl";
     const LOG_REPORTING    = E_ALL;
+
+    // @todo header short
+    const HEADER_TEXT_SHORT = 'plain|html|css|xml';
+    const HEADER_APPLICATION_SHORT = 'javascript|json|pdf';
+    const HEADER_IMAGE_SHORT = 'jpeg|gif|png';
+
     /**
      * @static
      * @var object  static for singleton
@@ -60,6 +68,10 @@ class Agent
      * @var array   $pdo  object container
      */
     public $db = array();
+    /**
+     * @var string for short header
+     */
+    protected $charset = 'utf-8';
     /**
      * @var integer  loglevel
      */
@@ -405,15 +417,46 @@ class Agent
      */
     protected function closeModule($module)
     {
-        if (! is_null($instance = $this->getModule($module))) {
-            if (is_object($instance) && method_exists($instance,'onClose')) {
-                $instance->onClose($this);
-            }
+        $this->triggerOnCloseModule($module);
+        $this->unsetModule($module);
+    }
+    /**
+     * trigger onClose
+     * @param  string $module 
+     * @return void
+     */
+    protected function triggerOnCloseModule($module)
+    {
+        $md = $this->getModule($module);
+        if (is_object($md) && ($md instanceof CloseModuleInterface)) {
+            $this->log(E_NOTICE, "Call onClose() ".get_class($md), true, $module);
+            $md->onClose();
         }
+    }
+    /**
+     * unset Module 
+     * @param  string $module 
+     * @return void
+     */
+    protected function unsetModule($module) {
         if (isset($this->modules[$module])) {
             unset ($this->modules[$module]);
         }
         $this->log(E_NOTICE, "Close Module", true, $module);
+    }
+    /**
+     * close All Module sequence 
+     * @param  array $modules 
+     * @return void
+     */
+    protected function closeAllModule($modules)
+    {
+        foreach($modules as $module) {
+            $this->triggerOnCloseModule($module);
+        }
+        foreach($modules as $module) {
+            $this->unsetModule($module);
+        }
     }
     /**
      * return module instance
@@ -470,11 +513,11 @@ class Agent
     protected function refreshModule($module, $params = array())
     {
         $md = $this->getModule($module);
-        if (is_object($md) && method_exists($md, 'refresh')) {
-            $md->refresh($params);
+        if (is_object($md) && ($md instanceof RefreshInterface)) {
+            $md->onRefresh($params);
             $this->log(E_NOTICE, 'Module Refresh', true, $module);
         } else {
-            $this->log(E_WARNING, 'Not exists refresh method in module method', true, $module);
+            $this->log(E_WARNING, 'Not exists refresh method in class Module ', true, $module);
         }
     }
     /**
@@ -491,17 +534,17 @@ class Agent
             return false;
         }
     }
-    // method --------------------------------------------------------------------
+    // pull --------------------------------------------------------------------
     /**
-     * call method return variables array
-     * @param  string $method 
+     * call pull return variables array
+     * @param  string $pull 
      * @param  string $module 
      * @param  array  $params 
      * @return array
      */
-    public function getMethod($method, $module, $params)
+    public function getPull($pull, $module, $params)
     {
-        return $this->callGetVariables('method', $method, $module, $params, array());
+        return $this->callGetVariables('pull', $pull, $module, $params, array());
     }
     // loop --------------------------------------------------------------------
     /**
@@ -517,14 +560,14 @@ class Agent
     }
     // call --------------------------------------------------------------------
     /**
-     * call method or loop & return variables.
+     * call pull or loop & return variables.
      * try  1.module method  2.create instance->method  3.callable  4.return default empty
-     * @param  string $kind    'method' / 'loop'
-     * @param  string $name    method name / loop name
+     * @param  string $kind    'pull' / 'loop'
+     * @param  string $name    pull name / loop name
      * @param  string $module  module name
      * @param  array  $params  tag attribute params
      * @param  mixed  $default return default
-     * @return array|object    case method: array() / case loop: array(array())
+     * @return mixed  array|object  case pull: array() / case loop: array(array())
      */
     protected function callGetVariables($kind, $name, $module, $params, $default)
     {
@@ -664,7 +707,7 @@ class Agent
     }
     /**
      * fetch tag parse . Retrieve nested 'agent tag' by recursive call.
-     * @todo parameter object (module,methodVars,loopVars,loopkey,line)
+     * @todo parameter object (module,pullVars,loopVars,loopkey,line)
      * @param  string  $source
      * @param  object $resource
      * @return string
@@ -732,15 +775,15 @@ class Agent
                 if (Utility::boolStr($attrs->reserved['refresh'], false)) {
                     $this->refreshModule($module, $attrs->params);
                 }
-                // method vars
-                if (isset($attrs->reserved["method"])) {
-                    $inResource->methodVars = $this->getMethod($attrs->reserved["method"], $module, $attrs->params);
+                // pull vars
+                if (isset($attrs->reserved["pull"])) {
+                    $inResource->pullVars = $this->getPull($attrs->reserved["pull"], $module, $attrs->params);
                 } else {
-                    $inResource->methodVars = $resource->methodVars;
+                    $inResource->pullVars = $resource->pullVars;
                 }
                 // appends vars
                 foreach ($attrs->appends as $key => $value) {
-                    $inResource->methodVars[$key] = $value;
+                    $inResource->pullVars[$key] = $value;
                 }
                 // loop vars
                 $inLoopVarsList = (isset($attrs->reserved["loop"]))
@@ -786,9 +829,7 @@ class Agent
             $this->log(E_NOTICE,'---------- POST PROCESS ----------',true,$resource->module);
             // unset all module instance 
             $modules = array_reverse($this->modules);
-            foreach (array_keys($modules) as $modulename) {
-                $this->closeModule($modulename);
-            }
+            $this->closeAllModule(array_keys($modules));
             $this->line = 0;
         }
         return $output;
@@ -823,7 +864,7 @@ class Agent
         if ($this->debug()) {
             $module = $resource->module;
             $check  = "<ul>";
-            $check .= " <li>Method variables\n".(string) new ArrayDumpTable($resource->methodVars)."</li>";
+            $check .= " <li>Pull variables\n".(string) new ArrayDumpTable($resource->pullVars)."</li>";
             $check .= " <li>Loop variables\n".(string) new ArrayDumpTable($inLoopVarsList)."</li>";
             $check .= " <li>{$module} Module variables\n".(string) new ArrayDumpTable($this->getVariable(null, $module))."</li>";
             if ($module !== 'GLOBAL') {

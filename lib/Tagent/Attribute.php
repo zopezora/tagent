@@ -4,13 +4,13 @@ namespace Tagent;
 class Attribute
 {
     // const pattern
-    const RESERVED_ATTRS  = 'module|method|loop|parse|close|refresh|header|newmodule|template|check|debug';
+    const RESERVED_ATTRS  = 'module|pull|loop|parse|close|refresh|header|newmodule|template|check|debug';
     /**
      * @var array
      */
     public $reserved = array(
                 "module"        => null,
-                "method"        => null,
+                "pull"        => null,
                 "loop"          => null,
                 "parse"         => null,
                 "close"         => null,
@@ -37,7 +37,7 @@ class Attribute
      */
     public function __construct($source, ParseResource $resource)
     {
-        $agent = Agent::getInstance();
+        $agent = Agent::self();
         $pattern = "/(?:\"[^\"]*\"|'[^']*'|[^'\"\s]+)+/";
         if (preg_match_all( $pattern,$source,$matches)) {
             $array = $matches[0];

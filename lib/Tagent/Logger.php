@@ -88,7 +88,7 @@ STYLE;
      */
     public function log($level, $message, $escape = false, $module = "")
     {
-        $agent = Agent::getInstance();
+        $agent = Agent::self();
         if (! $agent->debug()){
             return false;
         }
@@ -122,7 +122,7 @@ STYLE;
      */
     public function report()
     {
-        $agent = Agent::getInstance();
+        $agent = Agent::self();
         $level  = $agent->log_reporting();
 
         $output  = "<div class='".self::CSS_CLASS."'>\n";

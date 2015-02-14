@@ -20,19 +20,43 @@ PHP template parser.
 
 ##Template  
 
-###parse target
+###Parse target
 
 * `<ag></ag>`  
 * `{@VARIABLE}`  
 
+####Tag
 ```text
 <ag ATTRIBUTE=VALUE>{@VARIABLE}</ag>
 ```
 
 some attributes are reserved.  
-`module`,`method`,`loop`,`parse`,`close`,`refresh`,`newmodule`,`template`,`check`,`debug`,`header`  
+`module`,`pull`,`loop`,`parse`,`close`,`refresh`,`newmodule`,`template`,`check`,`debug`,`header`  
 
-Other attributes are used as a property  array $params  (see. Module,method,loop)  
+Other attributes are used as a property  array $params  (see. Module,pull,loop)  
+
+####Variable
+```text
+{@scope:name|format}
+   ex.{@foo}, {@m:foo}, {@foo|r},  {@global:foo|json}
+```
+
+* scope(option)  
+`loop` or `l`  
+`module` or `m`  
+`global` or `g`  
+case-insensitive
+
+* name  
+/\w+/  
+a to z, A to Z. and '_' under bar  
+
+* format(option)  
+`html` or `h`  (default)  htmlspecialchars()  
+`raw` or `r`  
+`url` or `u`  urlencode()  
+`json` or `j`  json_encode()  
+case-insensitive
 
 ###Exmaples
 
@@ -44,13 +68,13 @@ Other attributes are used as a property  array $params  (see. Module,method,loop
  <p>{@bar}</p>
  <ul>
    <ag loop='baz'>
-   <li>{@item}</li>
+   <li>{@l:item}</li>
    </ag>
  </ul>
 </ag>
 ```
 
-> json in script jQuery  html <script></script>
+> json in html script jQuery.parse  
 
 ```html
 <ag module='Foo'>
@@ -63,16 +87,23 @@ Other attributes are used as a property  array $params  (see. Module,method,loop
 > json in script jQuery  .js  
 
 ```js
-// <ag module='Foo'>
+/* <ag header ='Content-Type: text/javascript; charset=utf-8'></ag>
+   <ag module='Foo'> */
   var obj = $.parseJSON('{@some|json}');
-//</ag>
+/* </ag> */
+```
+
+> json.php  
+
+```js
+<ag header ='Content-Type: application/json; charset=utf-8' module='Foo'>{@some|json}</ag>
 ```
 
 > css.php
 
-```css
-/* <ag header='Content-Type: text/css; charset=utf-8'><> */
-/* <ag module='Foo' method='bar' border='1px solid #aaa'> */
+```text
+/* <ag header='Content-Type: text/css; charset=utf-8'></ag> 
+   <ag module='Foo' pull='bar' border='1px solid #aaa'> */
 div.bar {
   border : {@border};
 }
@@ -90,13 +121,13 @@ use composer
 [project] - [public] - WEB DOCUMENT ROOT
           |            index.php
           |            (-some-)
-          |- [ag]-[Module_GLOBAL] -[Methods]  - *.php 
+          |- [ag]-[Module_GLOBAL] -[Pulls]  - *.php 
           |      |                 [Loops]    - *.php
           |      |                 [Templates]- *.tpl
           |      |                 [......]   - *.php
           |      |                 Module.php
           |      |
-          |      |-[Module_Foo]----[Methods]  - *.php
+          |      |-[Module_Foo]----[Pulls]  - *.php
           |                        [Loops]    - *.php
           |                        [Templates]- *.tpl
           |                        [......]   - *.php
@@ -106,6 +137,37 @@ use composer
           |- [vendor]-[tagent]-[tagent]-[lib]-Agent.php
                                               (......)
 ```
+
+[ag] ... setting in config.php   key='ag_directories' multiple directories.  
+
+####Fixed class / file name  
+
+|file name    | class                |               |
+|-------------|----------------------|---------------|
+|Module.php   | \Module_***\Module   | 
+
+
+####Fixed directory name  
+
+| directory   | description            | ref. TAG attribute         |
+|-------------|------------------------|----------------------------|
+|[Module_***] | module directory       |`<ag module='***'></ag>`    |
+|[Pullss]     | Pull class directory   |`<ag pull='bar'></ag>`      |
+|[Loops]      | Loop clas directory    |`<ag loop='bar'></ag>`      |
+|[Templates]  | Template directory     |`<ag template='bar'></ag>`  |
+
+
+####Fixed method name 
+
+* Module class
+| method      | class                                         |
+|-------------|-----------------------------------------------|
+|`onRefresh`  |`\Module_***\Module` rf.RefreshInterface       |
+|`onClose`    |`\Module_***\Module` rf.CloseInterface         |
+|`pull_***`   |`\Module_***\Module` , `\Module_***\Pulls\***` |
+|`loop_***`   |`\Module_***\Module` , `\Module_***\Loops\***` |
+
+
 
 >bootstap.php
 
@@ -284,7 +346,7 @@ Agent has the following module elements.
 1. Module instance.  
 2. Variables container.  
 3. Objects container.  
-4. Methods  
+4. Pulls  
 5. Loops  
 6. Templates  
 
@@ -337,12 +399,12 @@ Close module
 ex.  
 
     <ag module='Foo'>
-      <ag method='bar'></ag>  
+      <ag pull='bar'></ag>  
     </ag>
 
 same 
 
-    <ag module='Foo' method='bar'></ag>
+    <ag module='Foo' pull='bar'></ag>
 
 
 ###Module object  
@@ -362,8 +424,8 @@ Also option below.
  * Module.php
  * namespace Module_***   module-name 
  * array $params non-reserved attributes
- * function method_***    method-name
- * function loop_***      loop-name
+ * function pull_***    pull-name
+ * function loop_***    loop-name
  */
 namespace Module_Foo;
 
@@ -381,9 +443,9 @@ class Module extends AbstractModule implements RefreshModuleInterface
         // RefreshModuleInterface
         // <ag refresh='on'></ag>
     }
-    public function method_bar(array $params)
+    public function pull_bar(array $params)
     {
-        // <ag method='bar'>
+        // <ag pull='bar'>
         return array();
     }
     public function loop_baz(array $params)
@@ -416,37 +478,37 @@ Same as next.`\Tagent\Agent::self()->get('key','modulename');`
 
 Same as next.`\Tagent\Agent::self()->log('key','modulename',true,'modulename');`
 
-###method
+###pull
 
-`<ag module='Foo' method='bar'></ag>`
+`<ag module='Foo' pull='bar'></ag>`
 
-First ,  seach method `function method_bar()` in module object \Module_Foo\Module.  
-Second , search `class \Module_Foo\Methods\bar`  , call `method_bar()`  
+First ,  seach method `function pull_bar()` in module object \Module_Foo\Module.  
+Second , search `class \Module_Foo\Pulls\bar`  , call `pull_bar()` or __invoke()  
 
 fix namespace and directory.
 
->Module_Foo\Methods\bar.php
+>Module_Foo\Pulls\bar.php
 
 ```php
 <?php
-namespace Module_Foo\Methods;
+namespace Module_Foo\Pulls;
 
 use Tagent\Agent;
 use Tagent\AbstractModule;
 
 class bar extends AbstractModule
 {
-    public function method_bar(array $params){
+    public function pull_bar(array $params){
       return array();
     }
 } 
 ?>
 ```
 
-call function `method_bar()` or call __invoke($params)  
+call function `pull_bar()` or call __invoke($params)  
 $params are non-reserved attributes.  
 
-return example. return array['apple']='red'; ,set method variable  {@apple}  
+return example. return array['apple']='red'; ,set pull variable  {@apple}  
 
 ###loop
 
@@ -536,10 +598,10 @@ namespace Module_Foo;
 
 class Module extends AbstractModule
 {
-  public function bar() {
-    $this->set('some', new someclass;
-    $this->get('some')->somemethod();
-
+  public function bar()
+  {
+    $this->set('baz', new anyclass );
+    $obj = $this->get('baz');
   }
 }
 ?>
@@ -559,10 +621,10 @@ namespace Module_Foo;
 class Module extends AbstractModule
 {
   public function __construct($params) {
-    $this->set('some', new someclass($params);
+    $this->set('baz', new anyclass($params);
   }
-  public function method_bar($params) {
-    return $this->get('some')->someMethod();
+  public function pull_bar($params) {
+    return $this->get('baz')->();
   }
 }
 ?>

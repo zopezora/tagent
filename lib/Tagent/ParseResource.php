@@ -16,7 +16,7 @@ class ParseResource {
     /**
      * @var array
      */
-    public $methodVars = array();
+    public $pullVars = array();
     /**
      * @var array
      */ 
@@ -45,7 +45,7 @@ class ParseResource {
      */
     public function varFetch($source)
     {
-        $agent = Agent::getInstance();
+        $agent = Agent::self();
         $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())(\w+)(?|((?:\[[^\[\]]+\])+)|())(?|\|(".self::OUTPUT_FORMATS.")|())}/i";
         $output = "";
         while (preg_match($pattern, $source, $matches, PREG_OFFSET_CAPTURE)) {
@@ -59,22 +59,22 @@ class ParseResource {
             $format  = $matches[4][0];
 
             $key_array = array($key);
-            if (preg_match_all("/\[([^\[\]]+)\]/", $index, $matches)) {
-                foreach ($matches[1] as $match) {
-                    $key_array[] = $match;
+            if (preg_match_all("/\[([^\[\]]+)\]/", $index, $index_matches)) {
+                foreach ($index_matches[1] as $im) {
+                    $key_array[] = $im;
                 }
             }
             // Before the string of match
             $output .= $agent->buffer(substr($source, 0, $pos));
             $agent->line = ($this->line += substr_count(substr($source, 0, $pos), "\n"));
             // --- parse variable priority ---
-            //  1.methodVars   2.$loopVars   3.moduleVars   4.globalmoduleVars
+            //  1.pullVars   2.$loopVars   3.moduleVars   4.globalmoduleVars
             $scope = ($scope == "") ? "*" : strtoupper($scope[0]);
 
             $var = null;
             switch ($scope) {
                 case "*":
-                    $var = Utility::getValueByDeepkey($key_array, $this->methodVars);
+                    $var = Utility::getValueByDeepkey($key_array, $this->pullVars);
                     if (isset($var)){
                         break;
                     } // else no break
@@ -96,14 +96,11 @@ class ParseResource {
                     $var = Utility::getValueByDeepkey($key_array, $agent->getVariable(null, 'GLOBAL'));
                     break;
             }
-            if ( is_null($var) && $index !== "") {
-                $agent->log(E_PARSE, 'Not Found Variable array index ['.$index.'] is Unvalid '.$match, true, $this->module);
-            }
             if (isset($var)) {
                 //format
                 $output .= $agent->buffer($this->format($var, $format));
             } else {
-                $agent->log(E_PARSE,'Not Found Variable'.$match, true, $this->module);
+                $agent->log(E_PARSE,'Not Found Variable  '.$match.$index, true, $this->module);
                 if ($agent->debug()) {
                     $output .= $agent->buffer("*NotFound*".$match);
                 } else {
@@ -124,7 +121,7 @@ class ParseResource {
      */
     public function format($source, $format = 'h')
     {
-        $agent = Agent::getInstance();
+        $agent = Agent::self();
         if ($source === false) {
             return false;
         }

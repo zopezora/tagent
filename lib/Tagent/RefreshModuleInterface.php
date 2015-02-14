@@ -12,5 +12,5 @@ interface RefreshModuleInterface
      * if open tag with attributes refresh='yes' , this method is called. 
      * @param  array $params 
      */
-    public function refresh(array $params);
+    public function onRefresh(array $params);
 }
