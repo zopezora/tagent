@@ -191,7 +191,7 @@ Front-controller is not included in the Tagent
 <?php
 chdir (__DIR__);
 require 'vendor/autoload.php';
-$agent = \Tagent\Agent::init( require 'config.php' );
+$agent = \Tagent\Agent::init( require 'path/to/config.php' );
 
 // ---  resolve $filename by your router ---
 
@@ -232,9 +232,11 @@ true,   `resister_shutdown_function ( Agent->display() )`
 
 Agent tag is `<ag></ag>`  
 
-    "agent_directory"  => "ag/",
+    "agent_directories"  => array ("ag/"),
 
-Location of the module  
+Directory of the modules  
+Multiple directories, array('ag/', 'vendor/foo/bar/lib/');  
+
 
     "line_offset"      => 0,       // for log reporting.
 
@@ -243,6 +245,36 @@ Adjust line-number for log reporting
     "template_ext"     => ".tpl",
 
 Template file extension.  
+
+
+##Agent
+
+Agent object is singleton  .
+
+//   create instance
+$agent = \Tagent\Agent::init(); 
+
+// get instance 
+$agent = Tagent\Agent::self();
+
+###Agent method  
+
+```
+// Object locator  
+get('name', 'module' = 'GLOBAL')  
+set('name', $object, 'module' = 'GLOBAL')  
+has('name', 'module' = 'GLOBAL')  
+  
+// module variable
+getVariable('key' ,'module' = 'GLOBAL')
+setVariable('key' , $value ,'module' = 'GLOBAL')
+
+// log
+log($level,'message', $escape = true, 'module' = 'GLOBAL')
+
+// PDO connection  
+db('name')
+```
 
 
 ##Module control
@@ -370,19 +402,19 @@ class Module extends AbstractModule implements RefreshModuleInterface
 * setVariable($key, $value)   // < if $vaule==null, unset. >
 * setVariablesByArray(array $array)  // < override by array >
 
-Same as next.`\Tagent\Agent::getInstance()->getVariable('key,'modulename');`  
+Same as next.`\Tagent\Agent::self()->getVariable('key','modulename');`  
 
 #####Object Locator  
 * get($name)  
 * set($name, $object)  // < if $object==null, unst >
 * has($name)  
 
-Same as next.`\Tagent\Agent::getInstance()->get('key,'modulename');`  
+Same as next.`\Tagent\Agent::self()->get('key','modulename');`  
 
 #####log  
 * log($level,'message');
 
-Same as next.`\Tagent\Agent::getInstance()->log('key,'modulename',true,'modulename');`
+Same as next.`\Tagent\Agent::self()->log('key','modulename',true,'modulename');`
 
 ###method
 
@@ -550,6 +582,44 @@ class someclass implements FactoryInterface
 }
 ?>
 ```
+
+##DB
+
+get PDO connection by Config setting.
+
+>config.php
+
+```php
+<?php
+return array(
+    "db" => array(
+        'default'=> array (
+            "dsn"      => "mysql:host=localhost;dbname=test",
+            "user"     => "username",
+            "password" => "password",
+            "options"  => array(\PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC),
+        ),
+        'foo'=> array (
+            "dsn"   => "sqlite:db/testdb.sqlite3",
+            // user=''; password=''; options=array();
+        )
+    )
+);
+?>
+```
+
+>usage
+
+```php
+<?php
+
+$dbh_default = \Tagent\Agent::self()->db();          // get PDO object by config ['db']['default']
+
+$dbh_foo     = \Tagent\Agent::self()->db('foo');     // get PDO object by config ['db']['foo']
+
+?>
+```
+
 
 ##Autoloader
 

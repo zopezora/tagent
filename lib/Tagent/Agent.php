@@ -57,6 +57,10 @@ class Agent
      */
     public $line = 0;
     /**
+     * @var array   $pdo  object container
+     */
+    public $db = array();
+    /**
      * @var integer  loglevel
      */
     protected $loglevel = array(
@@ -89,6 +93,14 @@ class Agent
         return static::$selfInstance;
     }
     /**
+     * singleton instance
+     * @return object self instance
+     */
+    public static function self()
+    {
+        return static::$selfInstance;
+    }
+    /**
      * configure , out buffer start
      * @param array $config 
      * @param bool  $bufferstart 
@@ -105,6 +117,7 @@ class Agent
             "line_offset"       => self::LINE_OFFSET,
             "template_ext"      => self::TEMPLATE_EXT,
             "log_reporting"     => self::LOG_REPORTING,
+            "db"                => array(),
         );
         // agent direcrories
         if (array_key_exists('agent_directories', $config) && ! is_array($config['agent_directories'])) {
@@ -302,6 +315,47 @@ class Agent
             return fale;
         }
         return (isset($this->modules[$module]['objects'][$key])) ? true : false;
+    }
+    // pdo --------------------------------------------------------------------
+    // configs[pdo][name]   [dsn][username][password][options]
+
+    /**
+     * db return PDO handle
+     * @param type $name 
+     * @return object|false
+     */
+    public function db($name = null)
+    {
+        $name = (isset($name)) ? $name : 'default' ;
+        if (isset($this->db[$name])) {
+            return $this->db[$name];
+        }
+        $dbConfig = $this->getConfig('db');
+        if (isset($dbConfig[$name])) {
+            $dbConfig = $dbConfig[$name];
+            $dsn      = (isset($dbConfig['dsn']))      ? $dbConfig['dsn']      : '';
+            $user     = (isset($dbConfig['user']))     ? $dbConfig['user']     : '';
+            $password = (isset($dbConfig['password'])) ? $dbConfig['password'] : '';
+            $options  = (isset($dbConfig['options']))  ? $dbConfig['options']  : array();
+
+            if ($dsn=='') {
+                $this->log(E_ERROR,"Not found config [db][{$name}][dsn]",true,'AGENT_DB');
+                return false;
+            }
+            try {
+                $dbh = new \PDO($dsn, $user, $password, $options);
+            } catch (\PDOException $e) {
+                $this->db[$name] = false;
+                $this->log(E_ERROR,$e->getMessage(),true,'AGENT_DB');
+                return false;
+            }
+
+            $this->log(E_NOTICE,"Connect DB {$name}",true,'AGENT_DB');
+            return $this->db[$name] = $dbh;
+        } else {
+            $this->log(E_ERROR,"Not found config [db][{$name}]",true,'AGENT_DB');
+            return false;
+        }
     }
     // Module Control --------------------------------------------------------------------
     /**
