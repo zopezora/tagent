@@ -674,7 +674,7 @@ class Agent
      */
     public function fileDisplay($filename)
     {
-        if ( $source = $this->readFile($filename) !== false ) {
+        if (($source = $this->readFile($filename)) !== false) {
             $this->display($source);
             return true;
         }
@@ -687,7 +687,7 @@ class Agent
      */
     public function fileFetch($filename, ParseResource $resource = null)
     {
-        if ($source = $this->readFile($filename) !== false) {
+        if (($source = $this->readFile($filename)) !== false) {
             return $this->fetch($source);
         } else {
             return false;
@@ -698,6 +698,7 @@ class Agent
         if (is_readable($filename) &&  ($source = file_get_contents($filename)) !== false) {
             return $source;
         }
+        $this->log(E_WARNING,'readFile() not found filename:'.$filename, true, 'AGENT');
         return false;
     }
     public function buffer($str)
