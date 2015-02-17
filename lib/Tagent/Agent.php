@@ -22,11 +22,6 @@ class Agent
     const TEMPLATE_EXT     = ".tpl";
     const LOG_REPORTING    = E_ALL;
 
-    // @todo header short
-    const HEADER_TEXT_SHORT = 'plain|html|css|xml';
-    const HEADER_APPLICATION_SHORT = 'javascript|json|pdf';
-    const HEADER_IMAGE_SHORT = 'jpeg|gif|png';
-
     /**
      * @static
      * @var object  static for singleton
@@ -68,10 +63,6 @@ class Agent
      * @var array   $pdo  object container
      */
     public $db = array();
-    /**
-     * @var string for short header
-     */
-    protected $charset = 'utf-8';
     /**
      * @var integer  loglevel
      */
@@ -767,81 +758,87 @@ class Agent
             // attribute parse
             $attrs = new Attribute($attr, $resource);
 
-            // parse switch parse= on/off yes/no y/n
-            if (! Utility::boolStr($attrs->reserved['parse'], true) ) {
-                // parse = no
-                $output .= $this->buffer($inTag);
-                $this->log(E_NOTICE,'Parse: No', true, $resource->module);
-                $this->line = $matchLine;
-
+            $inResource = new ParseResource;
+            // debug
+            if (isset($attrs->reserved['debug'])) {
+                $this->debug(Utility::boolStr($attrs->reserved['debug']));
+            }
+            // header
+            if (isset($attrs->reserved["header"])) {
+                $header = HttpHeader::header($attrs->reserved["header"]);
+                $this->log(E_NOTICE,"header({$header})",true,'AGENT');
+                header($header);
+            }
+            //module control
+            if (isset($attrs->reserved["module"])) {
+                $module = $inResource->module = $attrs->reserved["module"];
+                $flagModule  = $this->openModule($module, $attrs->params);
             } else {
-                // parse = yes
-                $inResource = new ParseResource;
-                // debug
-                if (isset($attrs->reserved['debug'])) {
-                    $this->debug(Utility::boolStr($attrs->reserved['debug']));
+                $module = $inResource->module = $resource->module;
+                $flagModule  = false;
+            }
+            // close
+            $forceClose = Utility::boolStr($attrs->reserved['close'], false);
+            // refresh
+            if (Utility::boolStr($attrs->reserved['refresh'], false)) {
+                $this->refreshModule($module, $attrs->params);
+            }
+            // pull vars
+            if (isset($attrs->reserved["pull"])) {
+                $inResource->pullVars = $this->getPull($attrs->reserved["pull"], $module, $attrs->params);
+            } else {
+                $inResource->pullVars = $resource->pullVars;
+            }
+            // appends vars
+            foreach ($attrs->appends as $key => $value) {
+                $inResource->pullVars[$key] = $value;
+            }
+            // loop vars
+            $inLoopVarsList = (isset($attrs->reserved["loop"]))
+                            ? $this->getLoop($attrs->reserved["loop"], $module, $attrs->params)
+                            : array('_NOLOOP_'=>$resource->loopVars);
+            // template
+            if (isset($attrs->reserved['template'])) {
+                if ( ($template = $this->getTemplate($attrs->reserved['template'], $module))!==false) {
+                    $inTag = $template; // replace inTag to template
                 }
-                // header
-                if (isset($attrs->reserved["header"])) {
-                    header($attrs->reserved["header"]);
+            }
+            // read
+            if (isset($attrs->reserved['read'])) {
+                if ( ($content = $this->readFile($attrs->reserved['read'], $module))!==false) {
+                    $inTag = $content; // replace inTag to file content.
                 }
-                //module control
-                if (isset($attrs->reserved["module"])) {
-                    $module = $inResource->module = $attrs->reserved["module"];
-                    $flagModule  = $this->openModule($module, $attrs->params);
-                } else {
-                    $module = $inResource->module = $resource->module;
-                    $flagModule  = false;
-                }
-                // close
-                $forceClose = Utility::boolStr($attrs->reserved['close'], false);
-                // refresh
-                if (Utility::boolStr($attrs->reserved['refresh'], false)) {
-                    $this->refreshModule($module, $attrs->params);
-                }
-                // pull vars
-                if (isset($attrs->reserved["pull"])) {
-                    $inResource->pullVars = $this->getPull($attrs->reserved["pull"], $module, $attrs->params);
-                } else {
-                    $inResource->pullVars = $resource->pullVars;
-                }
-                // appends vars
-                foreach ($attrs->appends as $key => $value) {
-                    $inResource->pullVars[$key] = $value;
-                }
-                // loop vars
-                $inLoopVarsList = (isset($attrs->reserved["loop"]))
-                                ? $this->getLoop($attrs->reserved["loop"], $module, $attrs->params)
-                                : array('_NOLOOP_'=>$resource->loopVars);
-                // template
-                if (isset($attrs->reserved['template'])) {
-                    if ( ($template = $this->getTemplate($attrs->reserved['template'], $module))!==false) {
-                        $inTag = $template; // replace inTag to template
-                    }
-                }
-                // check
-                if (Utility::boolStr($attrs->reserved['check'], false)) {
-                    $this->checkResourceLog($inResource, $inLoopVarsList);
-                }
+            }
+            // check
+            if (Utility::boolStr($attrs->reserved['check'], false)) {
+                $this->checkResourceLog($inResource, $inLoopVarsList);
+            }
 
+            // output parse switch
+            if (Utility::boolStr($attrs->reserved['parse'], true) ) {
+                // parse = yes
                 foreach($inLoopVarsList as $key => $inResource->loopVars) {
                     $this->line = $beforeLine + $trimLineTag;
                     $inResource->loopkey = ($key !== '_NOLOOP_') ? $key : '';
                     // recursive fetch inside
                     $output .= $this->fetch($inTag, $inResource);
                 }
+            } else {
+                // parse = no
+                $output .= $this->buffer($inTag);
+                $this->log(E_NOTICE,'Parse: No', true, $resource->module);
+            }
 
-                $this->line = $matchLine;
+            $this->line = $matchLine;
 
-                // close module
-                if ($flagModule && $forceClose ) {
-                    if ($module !== 'GLOBAL' ) {
-                        $this->closeModule($module);
-                    } else {
-                        $this->log(E_WARNING, "GLOBAL module can not be forced close", true, $module);
-                    }
+            // close module
+            if ($flagModule && $forceClose ) {
+                if ($module !== 'GLOBAL' ) {
+                    $this->closeModule($module);
+                } else {
+                    $this->log(E_WARNING, "GLOBAL module can not be forced close", true, $module);
                 }
-            } // end of if parse on/off
+            }
 
             // line incriment source trim 
             $this->line += $trimLineSorce;
