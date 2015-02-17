@@ -26,17 +26,11 @@ class ParseResource {
      */ 
     public $loopkey = '';
     /**
-     * @var integer
-     */ 
-    public $line = 0;
-    /**
      * constructor
-     * @param integer $line 
      * @return void
      */
-    public function __construct($line = 0)
+    public function __construct()
     {
-        $this->line = $line;
     }
     /**
      * variable fetch .  search {@scope:name|format} , deployment to the value
@@ -66,7 +60,7 @@ class ParseResource {
             }
             // Before the string of match
             $output .= $agent->buffer(substr($source, 0, $pos));
-            $agent->line = ($this->line += substr_count(substr($source, 0, $pos), "\n"));
+            $agent->line += substr_count(substr($source, 0, $pos), "\n");
             // --- parse variable priority ---
             //  1.pullVars   2.$loopVars   3.moduleVars   4.globalmoduleVars
             $scope = ($scope == "") ? "*" : strtoupper($scope[0]);
@@ -111,6 +105,7 @@ class ParseResource {
             $source = substr($source, $pos + $len);
         }
         $output .= $agent->buffer($source);
+        $agent->line += substr_count($source,"\n");
         return $output;
     }
     /**

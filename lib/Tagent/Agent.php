@@ -351,7 +351,7 @@ class Agent
             $options  = (isset($dbConfig['options']))  ? $dbConfig['options']  : array();
 
             if ($dsn=='') {
-                $this->log(E_ERROR,"Not found config [db][{$name}][dsn]",true,'AGENT_DB');
+                $this->log(E_ERROR,"Not found config dsn [db][{$name}][dsn]",true,'AGENT_DB');
                 return false;
             }
             try {
@@ -359,14 +359,13 @@ class Agent
             } catch (\PDOException $e) {
                 $this->db[$name] = false;
                 $this->log(E_ERROR,$e->getMessage(),true,'AGENT_DB');
-                return false;
+                return $this->db[$name] = false;
             }
-
-            $this->log(E_NOTICE,"Connect DB {$name}",true,'AGENT_DB');
+            $this->log(E_NOTICE,"Connect DB {$name}:{$dsn}",true,'AGENT_DB');
             return $this->db[$name] = $dbh;
         } else {
-            $this->log(E_ERROR,"Not found config [db][{$name}]",true,'AGENT_DB');
-            return false;
+            $this->log(E_ERROR,"Not found DB config {$name}",true,'AGENT_DB');
+            return $this->db[$name] = false;
         }
     }
     // Module Control --------------------------------------------------------------------
@@ -513,7 +512,7 @@ class Agent
     protected function refreshModule($module, $params = array())
     {
         $md = $this->getModule($module);
-        if (is_object($md) && ($md instanceof RefreshInterface)) {
+        if (is_object($md) && ($md instanceof RefreshModuleInterface)) {
             $md->onRefresh($params);
             $this->log(E_NOTICE, 'Module Refresh', true, $module);
         } else {
@@ -724,8 +723,11 @@ class Agent
             $flagGlobal = true;
             $this->line = $resource->line = 1;
             $this->buffer = '';
-            $this->log(E_NOTICE,'---------- PRE PROCESS ----------',true,$resource->module);
+            $this->log(E_NOTICE,'---------- PRE PROCESS ----------', true, $resource->module);
         }
+
+        $sourceLine = $this->line + substr_count($source, "\n");
+
         $tag = $this->getConfig("agent_tag"); // default ag
         $pattern = "/<".$tag."\s*((?:\"[^\"]*\"|'[^']*'|[^'\">])*?)\s*>((?:(?>[^<]+)|<(?!(".$tag."|\/".$tag.")(>|\s))|(?R))*)<\/".$tag.">/is";
         // output buffer
@@ -738,22 +740,43 @@ class Agent
             $inTag = $matches[2][0]; // <tag>$inTag</tag>
             $len   = strlen($match);
 
-            // before Tag
-            $output .= $resource->varFetch(substr($source, 0, $pos));
+            $before = substr($source, 0, $pos);
+            $source = substr($source, $pos + $len);
 
-            $this->line = ($resource->line += substr_count(substr($source, 0, $pos), "\n"));
+            // line
+            $beforeLine = $this->line + substr_count($before, "\n");
+            $matchLine  = $beforeLine + substr_count($match, "\n");
 
-            // attrs ['params'] / ['reserved'] / ['appends']
+            // trimming
+            $trimLineTag   = 0;
+            $trimLineSorce = 0;
+            if (preg_match('/(\n|^)[ \t]*$/', $before) && preg_match('/^[ \t]*\r?\n/', $inTag)) {
+                $before = rtrim($before, ' \t');
+                $inTag  = preg_replace('/^[ \t]*\r?\n/', '', $inTag, 1, $trimLineTag);
+            }
+            if (preg_match('/\n[ \t]*$/', $inTag) && preg_match('/^[ \t]*\r?\n/', $source)){
+                $inTag  = rtrim($inTag, ' \t');
+                $source = preg_replace('/^[ \t]*\r?\n/', '', $source, 1, $trimLineSorce);
+            }
+
+            // varFetch before tag
+            $output .= $resource->varFetch($before);
+            unset($before);
+            $this->line = $beforeLine;
+
+            // attribute parse
             $attrs = new Attribute($attr, $resource);
 
             // parse switch parse= on/off yes/no y/n
-            if ( ! Utility::boolStr($attrs->reserved['parse'], true) ) {
+            if (! Utility::boolStr($attrs->reserved['parse'], true) ) {
                 // parse = no
-                $output .= $inTag;
-                $this->log(E_NOTICE,'Parse: No', true, $module);
+                $output .= $this->buffer($inTag);
+                $this->log(E_NOTICE,'Parse: No', true, $resource->module);
+                $this->line = $matchLine;
+
             } else {
                 // parse = yes
-                $inResource = new ParseResource($resource->line);
+                $inResource = new ParseResource;
                 // debug
                 if (isset($attrs->reserved['debug'])) {
                     $this->debug(Utility::boolStr($attrs->reserved['debug']));
@@ -800,35 +823,39 @@ class Agent
                 if (Utility::boolStr($attrs->reserved['check'], false)) {
                     $this->checkResourceLog($inResource, $inLoopVarsList);
                 }
-                // normaly single / multi by loop vars / zero loop , if loop return empty array.
+
                 foreach($inLoopVarsList as $key => $inResource->loopVars) {
+                    $this->line = $beforeLine + $trimLineTag;
                     $inResource->loopkey = ($key !== '_NOLOOP_') ? $key : '';
                     // recursive fetch inside
                     $output .= $this->fetch($inTag, $inResource);
                 }
-                $this->line = ($resource->line += substr_count($match, "\n"));
-                // close tag process
+
+                $this->line = $matchLine;
+
                 // close module
                 if ($flagModule && $forceClose ) {
-                    if ($inModule !== 'GLOBAL' ) {
+                    if ($module !== 'GLOBAL' ) {
                         $this->closeModule($module);
                     } else {
                         $this->log(E_WARNING, "GLOBAL module can not be forced close", true, $module);
                     }
                 }
             } // end of if parse on/off
-           // forward source
-            $source = substr($source, $pos+$len );
+
+            // line incriment source trim 
+            $this->line += $trimLineSorce;
+
         } // end of while serch <tag>
 
-        // remaining non-match string 
+        // remaining non Tag-match string 
         $output .= $resource->varFetch($source);
-        $this->line = ( $resource->line += substr_count($source, "\n"));
+        $this->line = $sourceLine;
 
         // post-process global fetch
         if ($flagGlobal) {
             $this->log(E_NOTICE,'---------- POST PROCESS ----------',true,$resource->module);
-            // unset all module instance 
+            // all module close sequence
             $modules = array_reverse($this->modules);
             $this->closeAllModule(array_keys($modules));
             $this->line = 0;
