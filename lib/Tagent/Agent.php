@@ -341,21 +341,22 @@ class Agent
             $password = (isset($dbConfig['password'])) ? $dbConfig['password'] : '';
             $options  = (isset($dbConfig['options']))  ? $dbConfig['options']  : array();
 
-            if ($dsn=='') {
-                $this->log(E_ERROR,"Not found config dsn [db][{$name}][dsn]",true,'AGENT_DB');
+            if ($dsn == '') {
+                $this->log(E_ERROR,"Not found config dsn [db][{$name}][dsn]",true,'AGENT_DB', 0);
                 return false;
             }
             try {
                 $dbh = new \PDO($dsn, $user, $password, $options);
             } catch (\PDOException $e) {
                 $this->db[$name] = false;
-                $this->log(E_ERROR,$e->getMessage(),true,'AGENT_DB');
+                $this->log(E_ERROR,$e->getMessage(),true,'AGENT_DB', 0);
                 return $this->db[$name] = false;
             }
-            $this->log(E_NOTICE,"Connect DB {$name}:{$dsn}",true,'AGENT_DB');
+            $this->db[$name] = $dbh;
+            $this->log(E_NOTICE,"Connect DB '{$name}': dsn={$dsn}",true,'AGENT_DB', 0);
             return $this->db[$name] = $dbh;
         } else {
-            $this->log(E_ERROR,"Not found DB config {$name}",true,'AGENT_DB');
+            $this->log(E_ERROR,"Not found DB config {$name}",true,'AGENT_DB', 0);
             return $this->db[$name] = false;
         }
     }
@@ -574,7 +575,7 @@ class Agent
             $instance = new $classname($params);
             $this->log(E_NOTICE, "Create {$kind} object: {$classname} search:{$methodname}", true, $module);
             if (method_exists($instance, $methodname)) {
-                $this->log(E_NOTICE, 'Call '.$classname.'->'.$methodname, true, $module);
+                $this->log(E_NOTICE, 'Call '.$classname.'->'.$methodname.'()', true, $module);
                 return $instance->$methodname($params);
             }
             if (is_callable($instance)) {
@@ -878,9 +879,16 @@ class Agent
      * @param  string $module 
      * @return void
      */
-    public function log($level, $message, $escape = true, $module = "")
+    public function log($level, $message, $escape = true, $module = "", $callerback = null)
     {
         if ($this->debug()) {
+            if (! is_null($callerback)) {
+                $br = ($escape) ? "\n" : '<br />';
+                $caller = Utility::getCaller((int) $callerback + 1);
+                if ($caller['class'] !== __CLASS__) {
+                    $message .= $br.'Caller: '.$caller['classmethod']."() ".$caller['fileline'];
+                }
+            }
             $this->logger->log($level, $message, $escape, $module);
         }
     }

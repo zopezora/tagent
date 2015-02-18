@@ -92,7 +92,25 @@ class Utility
         }
         return $var;
     }
+    /**
+     * get caller class-method 
+     * @param  integer $back 
+     * @return array
+     */
+    public static function getCaller($back = 0) {
+        $bt = debug_backtrace();
+        $caller = array();
+        $caller['file']      = (isset($bt[$back+1]) && isset($bt[$back+1]['file'])) ? $bt[$back+1]['file'] : '';
+        $dirs                = ($caller['file']) ? explode(DIRECTORY_SEPARATOR,dirname($caller['file'])) : false;
+        $parentdir           = ($dirs) ? end($dirs) : '';
+        $caller['shortfile'] = ($dirs) ? $parentdir.DIRECTORY_SEPARATOR.basename($caller['file']) : '' ;
+        $caller['line']      = (isset($bt[$back+1]) && isset($bt[$back+1]['line'])) ? $bt[$back+1]['line'] : '';
+        $caller['class']     = (isset($bt[$back+2]) && isset($bt[$back+2]['class'])) ? $bt[$back+2]['class'] : '';
+        $caller['type']      = (isset($bt[$back+2]) && isset($bt[$back+2]['type'])) ? $bt[$back+2]['type'] : '';
+        $caller['function']  = (isset($bt[$back+2]) && isset($bt[$back+2]['function'])) ? $bt[$back+2]['function'] : '';
+        $caller['classmethod'] = $caller['class'].$caller['type'].$caller['function'];
+        $caller['fileline']    = $caller['shortfile'].'('.$caller['line'].')';
+        return $caller;
+    }
 
-
-
-}
+} // end of class

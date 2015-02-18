@@ -95,6 +95,9 @@ STYLE;
 
         $properties = get_object_vars($var);
         $output .= "<tr><td colspan=2 class=".self::CSS_CLASS_PROPERTY.">properties</td></tr>";
+        if (empty($properties)) {
+            $output .= "<tr><td colspan=2>[empty]</td></tr>";
+        }
         foreach ($properties as $key=>$value ) {
             $output .= " <tr>\n";
             $output .= "  <td class='".self::CSS_CLASS_KEY."'>".htmlspecialchars($key)."</td>\n";
