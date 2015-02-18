@@ -1,67 +1,54 @@
 <?php
 /**
- * ArrayDump, part of Tagent
+ * Expand variable, part of Tagent
  * @package Tagent
  */
 namespace Tagent;
 
-class ArrayDumpTable
+class ExpandVariable
 {
     // const for css
-    const CSS_CLASS      = 'arrayDump';
-    const CSS_CLASS_KEY  = 'arrayDumpKey';
-    const CSS_CLASS_NOTE = 'arrayDumpNote';
+    const CSS_CLASS      = 'expandTable';
+    const CSS_CLASS_KEY  = 'expandTableKey';
+    const CSS_CLASS_NOTE = 'expandTableNote';
 
     const STYLE = <<<'STYLE'
 <style>
-    table.arrayDump {
+    table.expandTable {
         border-collapse : collapse;
         margin          : 1px;
     }
-    table.arrayDump th {
+    table.expandTable th {
         text-align : center ;
         background-color: #bbb;
         border: 1px solid #aaa;
     }
-    table.arrayDump td {
+    table.expandTable td {
         background-color : #fff;
         border           : 1px solid #aaa;
         padding : 2px 5px;
     }
-    table.arrayDump td.arrayDumpKey {
+    table.expandTable td.expandTableKey {
         background      : #eee;
     }
-    table.arrayDump td.arrayDumpNote {
+    table.expandTable td.expandTableNote {
         background      : #f99;
     }
 </style>
 
 STYLE;
 
-    /**
-     * @var string   dump output buffer
-     */
-    protected $output = "";
-
-    public function __construct($var, $title = '')
-    {
-        $this->output .= $this->expand($var);
-    }
-    public function __toString()
-    {
-        return $this->output;
-    }
-    public function expand($var)
+    public static function expand($var)
     {
         switch(gettype($var)) {
             case "array":
-                $output = $this->arrayExpand($var);
+                $output = self::expandArray($var);
                 break;
             case "object":
-                $output =$this->objectExpand($var);
+                $output = self::expandObject($var);
                 break;
             case "resource":
-                $output =$this->resourceExpand($var);
+                $output = self::expandResource($var);
                 break;
             // scalar
             case "boolean":
@@ -76,7 +63,7 @@ STYLE;
         }
         return $output;
     }
-    public function arrayExpand($var)
+    public static function expandArray($var)
     {
         $output = "<table class='".self::CSS_CLASS."'>\n";
         $output .= " <tr>\n";
@@ -90,13 +77,13 @@ STYLE;
         foreach ($var as $key=>$value ) {
             $output .= " <tr>\n";
             $output .= "  <td class=".self::CSS_CLASS_KEY.">".htmlspecialchars($key)."</td>\n";
-            $output .= "  <td>".$this->expand($value)."</td>\n";
+            $output .= "  <td>".self::expand($value)."</td>\n";
             $output .= " </tr>\n";
         }
         $output .= "</table>\n";
         return $output;
     }
-    public function objectExpand($var)
+    public static function expandObject($var)
     {
         $output = "<table class='".self::CSS_CLASS."'>\n";
         $output .= " <tr>\n";
@@ -107,7 +94,7 @@ STYLE;
             foreach ($var as $key => $value ) {
                 $output .= " <tr>\n";
                 $output .= "  <td class='".self::CSS_CLASS_KEY."'>".htmlspecialchars($key)."</td>\n";
-                $output .= "  <td>".$this->expand($value)."</td>\n";
+                $output .= "  <td>".self::expand($value)."</td>\n";
                 $output .= " </tr>\n";
             }
             if (! $var instanceof \itelator && ! $var instanceof \ArrayAccess) {
@@ -121,7 +108,7 @@ STYLE;
         $output .= "</table>\n";
         return $output;
     }
-    public function resourceExpand($var)
+    public static function expandResource($var)
     {
         $output = "<table class='".self::CSS_CLASS."'>\n";
         $output .= " <tr>\n";

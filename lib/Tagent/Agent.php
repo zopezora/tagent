@@ -889,11 +889,11 @@ class Agent
         if ($this->debug()) {
             $module = $resource->module;
             $check  = "<ul>";
-            $check .= " <li>Pull variables\n".(string) new ArrayDumpTable($resource->pullVars)."</li>";
-            $check .= " <li>Loop variables\n".(string) new ArrayDumpTable($inLoopVarsList)."</li>";
-            $check .= " <li>{$module} Module variables\n".(string) new ArrayDumpTable($this->getVariable(null, $module))."</li>";
+            $check .= " <li>Pull variables\n".ExpandVariable::expand($resource->pullVars)."</li>";
+            $check .= " <li>Loop variables\n".ExpandVariable::expand($inLoopVarsList)."</li>";
+            $check .= " <li>{$module} Module variables\n".ExpandVariable::expand($this->getVariable(null, $module))."</li>";
             if ($module !== 'GLOBAL') {
-                $check .= " <li>GLOBAL Module variables\n".(string) new ArrayDumpTable($this->getVariable(null, 'GLOBAL'))."</li>";
+                $check .= " <li>GLOBAL Module variables\n".ExpandVariable::expand($this->getVariable(null, 'GLOBAL'))."</li>";
             }
             $check .= "</ul>";
             $this->log(E_DEPRECATED, $check, false, $module);

@@ -7,7 +7,7 @@ namespace Tagent;
 
 class ParseResource {
     // const pattern
-    const OUTPUT_FORMATS  = 'h|r|u|j|html|raw|url|json';
+    const OUTPUT_FORMATS  = 'h|r|u|j|b|html|raw|url|json|base64';
     const VARIABLE_SCOPES = 'm|l|g|module|loop|global';
     /**
      * @var string
@@ -140,6 +140,9 @@ class ParseResource {
                 break;
             case 'j':
                 $output = json_encode($source);
+                break;
+            case 'b':
+                $output = base64_encode($source);
                 break;
             default:
                 $agent->log(E_WARNING, "Unvalid format (".$format.")");

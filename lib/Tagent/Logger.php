@@ -164,7 +164,7 @@ STYLE;
 
         $output .= self::STYLE;
         if ($checkflag) {
-            $output .= ArrayDumpTable::STYLE;
+            $output .= ExpandVariable::STYLE;
         }
         return $output;
     }
