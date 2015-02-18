@@ -113,4 +113,20 @@ class Utility
         return $caller;
     }
 
+    /**
+     * get value (scalar to string, or type for log
+     * @param type $value 
+     * @return type
+     */
+    public static function getValueOrType($value) {
+        if (is_scalar($value)){
+            return (string) "'".$value."'";
+        }
+        if (is_object($value)){
+            return "*".get_class($value)."*";
+        }
+
+        return "*".gettype($value)."*";
+    }
+
 } // end of class

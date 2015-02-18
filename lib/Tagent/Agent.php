@@ -202,36 +202,54 @@ class Agent
     // Variables --------------------------------------------------------------------
     /**
      * get variable .  no exists key return false.
-     * @param string $key 
+     * @param string $name
      * @return mixed|null
      */
-    public function getVariable($key = null, $module = 'GLOBAL')
+    public function getVariable($name = null, $module = 'GLOBAL', $bk = 0)
     {
-        if (! isset($key)) {
-            return (isset($this->modules[$module]['variables'])) ? $this->modules[$module]['variables'] : null;
+        if (! is_null($name) && ! is_string($name)) {
+            $name = Utility::getValueOrType($name);
+            $this->log(E_WARNING, "getVariable({$name},'{$module}') Name must be a string", true,'AGENT_VARIABLE', $bk);
+            return null;
         }
-        return (isset($this->modules[$module]['variables'][$key])) ? $this->modules[$module]['variables'][$key] : null;
+        if (! isset($this->modules[$module])) {
+            $this->log(E_WARNING, "getVariable('{$name}','{$module}') Module not open yet", true,'AGENT_VARIABLE', $bk);
+            return;
+        }
+        if (is_null($name)) {
+            return $this->modules[$module]['variables'];
+        }
+        if (isset($this->modules[$module]['variables'][$name])) {
+            return $this->modules[$module]['variables'][$name];
+        }
+        $this->log(E_WARNING,"getVariable('{$name}','{$module}') Not Found.", true, 'AGENT_VARIABLE', $bk);
+        return null;
     }
     /**
      * set/unset variables  always override
-     * @param string $key 
+     * @param string $name 
      * @param mixed $var 
      * @return void
      */
-    public function setVariable($key, $value, $module = 'GLOBAL')
+    public function setVariable($name, $value, $module = 'GLOBAL', $bk = 0)
     {
-        if (! isset($key)){
-            return ;
+        if (is_null($name) || ! is_string($name)) {
+            $name = Utility::getValueOrType($name);
+            $v    = Utility::getValueOrType($value);
+            $this->log(E_WARNING, "setVariable({$name},{$v},'{$module}') Name must be a string", true,'AGENT_VARIABLE', $bk);
+            return;
         }
-        if (! is_null($this->getModule($module))) {
-            if (is_null($value) && isset($this->modules[$module]['variables'][$key])) {
-                unset ($this->modules[$module]['variables'][$key]);
-                return;
-            }
-            $this->modules[$module]['variables'][$key] = $value;
-        } else {
-            $this->log(E_WARNING, 'setVariable key='.$key.' module='.$module.' not open yet');
+        if (! isset($this->modules[$module])) {
+            $v = Utility::getValueOrType($value);
+            $this->log(E_WARNING, "setVariable('{$name}',{$v},'{$module}') Module not open yet", true, 'AGENT_VARIABLE', $bk);
+            return;
         }
+        if (is_null($value) && isset($this->modules[$module]['variables'][$name])) {
+            unset ($this->modules[$module]['variables'][$name]);
+            return;
+        }
+        $this->modules[$module]['variables'][$name] = $value;
+        return;
     }
     /**
      * override set Variables by array  
@@ -239,85 +257,92 @@ class Agent
      * @param  string $module 
      * @return void
      */
-    public function setVariablesByArray(array $array, $module = 'GLOBAL')
+    public function setVariablesByArray(array $array, $module = 'GLOBAL', $bk = 0)
     {
-        if (! is_null($this->getModule($module))) {
-            $this->modules[$module]['variables'] = $array;
-        } else {
-            $this->log(E_WARNING, 'setVariableByArray module='.$module.' is not open yet');
+        if (! isset($this->modules[$module])) {
+            $array = Utility::getValueOrType($array);
+            $this->log(E_WARNING, "setVariableByArray({$array},'{$module}'') Module not open yet", true,'AGENT_VARIABLE', $bk);
+            return;
         }
+        $this->modules[$module]['variables'] = $array;
     }
     // Object Locator --------------------------------------------------------------------
     /**
      * get object
      * @name   string $name 
      * @param  string $module 
+     * @param  integer $bk  log back trace number
      * @return object
      */
-    public function get($name, $module = 'GLOBAL')
+    public function get($name, $module = 'GLOBAL', $bk = 0)
     {
         if (! isset($name) || ! is_string($name)) {
-            $this->log(E_WARNING,"Object Locator:get('{$name}','{$module}') Unvalid name" );
+            $name = Utility::getValueOrType($name);
+            $this->log(E_WARNING, "get('{$name}','{$module}') Name must be a string", true, 'AGENT_LOCATOR', $bk);
             return null;
         }
-        if (isset($this->modules[$module])) {
-            if (isset($this->modules[$module]['objects'][$name])) {
-                $object = $this->modules[$module]['objects'][$name];
-                if ($object instanceof FactoryInterface) {
-                    $this->modules[$module]['objects'][$name] = $object->factory();
-                    $this->log(E_NOTICE,"Object Locator:get('{$name}','{$module}') call ".get_class($object)."->factory().");
-                    return $this->modules[$module]['objects'][$name];
-                }
-                return $object;
-            } else {
-                $this->log(E_WARNING,"Object Locator:get('{$name}','{$module}') Not Found.");
-            }
-        } else {
-            $this->log(E_WARNING,"Object Locator:get('{$name}','{$module}') module is not open yet.");
+        if (! isset($this->modules[$module])) {
+            $this->log(E_WARNING,"get('{$name}','{$module}') module is not open yet.", true, 'AGENT_LOCATOR', $bk);
+            return null;
         }
-        return null;
+        if (! isset($this->modules[$module]['objects'][$name])) {
+            $this->log(E_WARNING,"get('{$name}','{$module}') Not Found.", true, 'AGENT_LOCATOR', $bk);
+            return null;
+        }
+        $object = $this->modules[$module]['objects'][$name];
+        if ($object instanceof FactoryInterface) {
+            $this->modules[$module]['objects'][$name] = $object->factory();
+            $this->log(E_NOTICE,"get('{$name}','{$module}') call ".get_class($object)."->factory()", true, 'AGENT_LOCATOR', $bk);
+            return $this->modules[$module]['objects'][$name];
+        }
+        return $object;
     }
     /**
      * set object
      * @param  string $name 
      * @param  object $object   if null , unset Object
      * @param  string $module
+     * @param  integer $bk  log back trace number
      * @return void
      */
-    public function set($name, $object, $module = 'GLOBAL')
+    public function set($name, $object, $module = 'GLOBAL', $bk = 0)
     {
-        $objectname = (is_object($object)) ? get_class($object) : "";
         if (! isset($name) || ! is_string($name)) {
-            $this->log(E_WARNING, "Object Locator: set('{$name}','{$objectname}',{$module}' Unvalid name");
+            $name = Utility::getValueOrType($name);
+            $v = Utility::getValueOrType($object);
+            $this->log(E_WARNING, "set({$name},{$v},'{$module}') Name must be a string", true, 'AGENT_LOCATOR', $bk);
             return;
         }
-        if (isset($this->modules[$module])) {
-            if (is_null($object) && isset($this->modules[$module]['objects'][$name])) { 
-                unset ($this->modules[$module]['objects'][$name]);
-            } else {
-                $this->modules[$module]['objects'][$name] = $object;
-            }
-        } else {
-            $this->log(E_WARNING, "Object Locator: set('{$name}','{$objectname}',{$module}' is not open yet");
+        if (! isset($this->modules[$module])) {
+            $v = Utility::getValueOrType($object);
+            $this->log(E_WARNING, "set('{$name}', {$v}, '{$module}') module is not open yet", true, 'AGENT_LOCATOR', $bk);
+            return;
         }
+        if (is_null($object) && isset($this->modules[$module]['objects'][$name])) { 
+            unset ($this->modules[$module]['objects'][$name]);
+            return;
+        }
+        $this->modules[$module]['objects'][$name] = $object;
     }
     /**
      * has object
-     * @param  string $name 
-     * @param  string $module 
+     * @param  string  $name 
+     * @param  string  $module
+     * @param  integer $bk  log back trace number
      * @return bool   true|false
      */
-    public function has($name, $module = 'GLOBAL')
+    public function has($name, $module = 'GLOBAL', $bk = 0)
     {
         if (! isset($name) || ! is_string($name) ) {
-            $this->log(E_WARNING,"Object Locator:has('{$name}','{$module}') Unvalid name" );
+            $name = Utility::getValueOrType($name);
+            $this->log(E_WARNING,"has('{$name}', '{$module}') Name must be a string", true, 'AGENT_LOCATOR', $bk);
             return false;
         }
-        if (isset($this->modules[$module])) {
-            $this->log(E_WARNING,"Object Locator:has('{$name}','{$module}') module is not open yet.");
-            return fale;
+        if (! isset($this->modules[$module])) {
+            $this->log(E_WARNING,"has('{$name}','{$module}') module is not open yet.", true, 'AGENT_LOCATOR', $bk);
+            return false;
         }
-        return (isset($this->modules[$module]['objects'][$key])) ? true : false;
+        return (isset($this->modules[$module]['objects'][$name])) ? true : false;
     }
     // pdo --------------------------------------------------------------------
     // configs[pdo][name]   [dsn][username][password][options]
@@ -342,21 +367,20 @@ class Agent
             $options  = (isset($dbConfig['options']))  ? $dbConfig['options']  : array();
 
             if ($dsn == '') {
-                $this->log(E_ERROR,"Not found config dsn [db][{$name}][dsn]",true,'AGENT_DB', 0);
+                $this->log(E_ERROR,"Not found config dsn [db][{$name}][dsn]", true, 'AGENT_DB', 0);
                 return false;
             }
             try {
                 $dbh = new \PDO($dsn, $user, $password, $options);
             } catch (\PDOException $e) {
-                $this->db[$name] = false;
-                $this->log(E_ERROR,$e->getMessage(),true,'AGENT_DB', 0);
+                $this->log(E_ERROR,$e->getMessage(), true, 'AGENT_DB', 0);
                 return $this->db[$name] = false;
             }
             $this->db[$name] = $dbh;
-            $this->log(E_NOTICE,"Connect DB '{$name}': dsn={$dsn}",true,'AGENT_DB', 0);
+            $this->log(E_NOTICE,"Connect DB '{$name}': dsn={$dsn}", true, 'AGENT_DB', 0);
             return $this->db[$name] = $dbh;
         } else {
-            $this->log(E_ERROR,"Not found DB config {$name}",true,'AGENT_DB', 0);
+            $this->log(E_ERROR,"Not found DB config {$name}", true, 'AGENT_DB', 0);
             return $this->db[$name] = false;
         }
     }
@@ -379,7 +403,7 @@ class Agent
     protected function openModule($module, $params = array())
     {
         if (is_null($instance = $this->getModule($module))) {
-            $this->log(E_NOTICE, "Open Module", true, $module);
+            $this->log(E_NOTICE, "Open Module {$module}", true, $module);
             $instance = $this->createModule($module, $params);
         }
         return $instance;
@@ -398,7 +422,7 @@ class Agent
             $this->closeModule($module);
             $instance = $this->createModule($module, $params);
         }
-        $this->log(E_NOTICE, "new Open Module (".$module.")", true, $module);
+        $this->log(E_NOTICE, "new Open Module {$module}", true, $module);
         return $instance;
     }
     /**
@@ -420,7 +444,7 @@ class Agent
     {
         $md = $this->getModule($module);
         if (is_object($md) && ($md instanceof CloseModuleInterface)) {
-            $this->log(E_NOTICE, "Call onClose() ".get_class($md), true, $module);
+            $this->log(E_NOTICE, "Call ".get_class($md)."->onClose()", true, $module);
             $md->onClose();
         }
     }
@@ -489,7 +513,8 @@ class Agent
     }
     /**
      * global module initialize
-     * @return type
+     * @todo add basic variable  date. time etc
+     * @return void
      */
     protected function globalModuleInit(){
         $this->setVariable('_GET', $_GET ,'GLOBAL');

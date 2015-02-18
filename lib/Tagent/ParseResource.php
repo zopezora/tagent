@@ -94,7 +94,7 @@ class ParseResource {
                 //format
                 $output .= $agent->buffer($this->format($var, $format));
             } else {
-                $agent->log(E_PARSE,'Not Found Variable  '.$match.$index, true, $this->module);
+                $agent->log(E_PARSE,'Not Found Variable  '.$match, true, $this->module);
                 if ($agent->debug()) {
                     $output .= $agent->buffer("*NotFound*".$match);
                 } else {
