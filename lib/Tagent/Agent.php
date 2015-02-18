@@ -810,6 +810,12 @@ class Agent
                     $inTag = $content; // replace inTag to file content.
                 }
             }
+            // trim
+            if (Utility::boolStr($attrs->reserved['trim'], false)) {
+                preg_match('/^\s*/', $inTag, $trimMatch);
+                $trimLineTag += substr_count($trimMatch[0],"\n");
+                $inTag = preg_replace('/(^\s*|\s*$)/', '', $inTag);
+            }
             // check
             if (Utility::boolStr($attrs->reserved['check'], false)) {
                 $this->checkResourceLog($inResource, $inLoopVarsList);
@@ -819,7 +825,7 @@ class Agent
             if (Utility::boolStr($attrs->reserved['parse'], true) ) {
                 // parse = yes
                 foreach($inLoopVarsList as $key => $inResource->loopVars) {
-                    $this->line = $beforeLine + $trimLineTag;
+                    $this->line = $beforeLine + $trimLineTag; 
                     $inResource->loopkey = ($key !== '_NOLOOP_') ? $key : '';
                     // recursive fetch inside
                     $output .= $this->fetch($inTag, $inResource);

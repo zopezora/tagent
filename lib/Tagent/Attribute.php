@@ -4,7 +4,7 @@ namespace Tagent;
 class Attribute
 {
     // const pattern
-    const RESERVED_ATTRS  = 'module|pull|loop|parse|close|refresh|header|newmodule|template|check|debug|read';
+    const RESERVED_ATTRS  = 'module|pull|loop|parse|close|refresh|header|newmodule|template|check|debug|read|trim';
     /**
      * @var array
      */
@@ -21,6 +21,7 @@ class Attribute
                 "check"         => null,
                 "debug"         => null,
                 "read"          => null,
+                "trim"          => null,
     );
     /**
      * @var array
