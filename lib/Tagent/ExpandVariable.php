@@ -8,9 +8,10 @@ namespace Tagent;
 class ExpandVariable
 {
     // const for css
-    const CSS_CLASS      = 'expandTable';
-    const CSS_CLASS_KEY  = 'expandTableKey';
-    const CSS_CLASS_NOTE = 'expandTableNote';
+    const CSS_CLASS          = 'expandTable';
+    const CSS_CLASS_KEY      = 'expandTableKey';
+    const CSS_CLASS_NOTE     = 'expandTableNote';
+    const CSS_CLASS_PROPERTY = 'expandTableProperty';
 
     const STYLE = <<<'STYLE'
 <style>
@@ -34,8 +35,10 @@ class ExpandVariable
     table.expandTable td.expandTableNote {
         background      : #f99;
     }
+    table.expandTable td.expandTableProperty {
+        background      : #7d7;
+    }
 </style>
-
 STYLE;
 
     public static function expand($var)
@@ -90,7 +93,17 @@ STYLE;
         $output .= "  <th colspan=2>".get_class($var)."</th>\n";
         $output .= " </tr>\n";
 
+        $properties = get_object_vars($var);
+        $output .= "<tr><td colspan=2 class=".self::CSS_CLASS_PROPERTY.">properties</td></tr>";
+        foreach ($properties as $key=>$value ) {
+            $output .= " <tr>\n";
+            $output .= "  <td class='".self::CSS_CLASS_KEY."'>".htmlspecialchars($key)."</td>\n";
+            $output .= "  <td>".self::expand($value)."</td>\n";
+            $output .= " </tr>\n";
+        }
+        // trabasable
         if ($var instanceof \Traversable) {
+            $output .= "<tr><td colspan=2 class=".self::CSS_CLASS_PROPERTY.">Trasable</td></tr>";
             foreach ($var as $key => $value ) {
                 $output .= " <tr>\n";
                 $output .= "  <td class='".self::CSS_CLASS_KEY."'>".htmlspecialchars($key)."</td>\n";
@@ -102,7 +115,7 @@ STYLE;
             }
         } else {
             $output .= "<tr>\n";
-            $output .= " <td colspan=2>".print_r($var, true)."</td>\n";
+            $output .= " <td colspan=2>Non taraserble</td>\n";
             $output .= "</tr>\n";
         }
         $output .= "</table>\n";
