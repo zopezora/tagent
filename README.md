@@ -57,7 +57,7 @@ case-insensitive
 
 ###Exmaples
 
-> template
+> template.tpl  / .php
 
 ```html
 <h1>{@title}</h1>
@@ -71,34 +71,39 @@ case-insensitive
 </ag>
 ```
 
-> json in html script jQuery.parse  
+> javascript html tag <script></script>  use jQuery parseJSON.  
 
 ```html
 <ag module='Foo'>
 <script>
-  var obj = $.parseJSON('{@bar|json}');
+$( document ).ready(function() {
+    var obj = $.parseJSON('{@bar|json}');
+});
 </script>
 </ag>
 ```
 
-> json in script jQuery  .js  
+> javascript script file  use jQuery parseJSON    
 
 ```js
-/* <ag header ='Content-Type: application/javascript; charset=utf-8'></ag>
-   <ag module='Foo'> */
+/* <ag header ='javascript' module='Foo'></ag> */
+$( document ).ready(function() {
   var obj = $.parseJSON('{@bar|json}');
+});
 /* </ag> */
 ```
 
-> json.php  
+> json.php  for ajax.  
 
-```text
-<ag header ='Content-Type: application/json; charset=utf-8' module='Foo'>{@bar|json}</ag>
+```php
+<ag header ='json' module='Foo' trim='on'>
+    {@bar|json}
+</ag>
 ```
 
 > css.php
 
-```text
+```css
 /* <ag header='Content-Type: text/css; charset=utf-8'></ag> 
    <ag module='Foo' pull='bar' border='1px solid #aaa'> */
 div.bar {
@@ -108,6 +113,14 @@ div.baz {
   border : {@border};
 }
 /* </ag> */
+```
+
+> jpeg.php
+
+```php
+<ag header='jpeg' module='Foo'>
+   <ag read={@bar}></ag>
+</ag>
 ```
 
 ##Basic Directory Structure 
@@ -137,14 +150,14 @@ use composer
 
 [ag] directory name is default setting in config.php `'ag_directories'=>array('ag/')` multiple OK  
 
-###Fixed directory & filename  
+###Fixed dir/file ename, class 
 
 | Directory      | Filename   |Class                   | TAG attribute                           |
 |----------------|------------|------------------------|-----------------------------------------|
 |[Module\_Foo]   |Module.php  |\Module\_Foo\Module     |`<ag module='Foo'></ag>`                 |
 |[Pulls]         |bar.php     |\Module\_Foo\Pulls\bar  |`<ag module='Foo' pull='bar'></ag>`      |
 |[Loops]         |baz.php     |\Module\_Foo\Loops\baz  |`<ag module='Foo' loop='baz'></ag>`      |
-|[Templates]     |qux.tpl     | --- no class ---       |`<ag module='Foo' template='qux'></ag>`  |
+|[Templates]     |qux.tpl     |                        |`<ag module='Foo' template='qux'></ag>`  |
 
 
 ###Fixed method name  
@@ -233,7 +246,7 @@ automatically preload bootstrap.php for file extension .tpl and .php(default)
 
     <?php require (dirname($_SERVER['DOCUMENT_ROOT']).'/bootstrap.php'); ?>
     <!DOCTYPE html>
-    <!--- omission --->
+    <!--- Omitted --->
     </html>
 
 If you want to match the log line number,It may be set in the configuration.  

@@ -202,7 +202,9 @@ class Agent
     // Variables --------------------------------------------------------------------
     /**
      * get variable .  no exists key return false.
-     * @param string $name
+     * @param  string  $name
+     * @param  string  $module
+     * @param  integer $bk caller backtrace number for log
      * @return mixed|null
      */
     public function getVariable($name = null, $module = 'GLOBAL', $bk = 0)
@@ -229,6 +231,8 @@ class Agent
      * set/unset variables  always override
      * @param string $name 
      * @param mixed $var 
+     * @param  string  $module
+     * @param  integer $bk caller backtrace number for log
      * @return void
      */
     public function setVariable($name, $value, $module = 'GLOBAL', $bk = 0)
@@ -253,8 +257,9 @@ class Agent
     }
     /**
      * override set Variables by array  
-     * @param  array  $array 
-     * @param  string $module 
+     * @param  array   $array 
+     * @param  string  $module
+     * @param  integer $bk caller backtrace number for log
      * @return void
      */
     public function setVariablesByArray(array $array, $module = 'GLOBAL', $bk = 0)
@@ -270,8 +275,8 @@ class Agent
     /**
      * get object
      * @name   string $name 
-     * @param  string $module 
-     * @param  integer $bk  log back trace number
+     * @param  string  $module
+     * @param  integer $bk caller backtrace number for log
      * @return object
      */
     public function get($name, $module = 'GLOBAL', $bk = 0)
@@ -301,8 +306,8 @@ class Agent
      * set object
      * @param  string $name 
      * @param  object $object   if null , unset Object
-     * @param  string $module
-     * @param  integer $bk  log back trace number
+     * @param  string  $module
+     * @param  integer $bk caller backtrace number for log
      * @return void
      */
     public function set($name, $object, $module = 'GLOBAL', $bk = 0)
@@ -328,7 +333,7 @@ class Agent
      * has object
      * @param  string  $name 
      * @param  string  $module
-     * @param  integer $bk  log back trace number
+     * @param  integer $bk caller backtrace number for log
      * @return bool   true|false
      */
     public function has($name, $module = 'GLOBAL', $bk = 0)

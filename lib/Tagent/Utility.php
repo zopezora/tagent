@@ -115,8 +115,8 @@ class Utility
 
     /**
      * get value (scalar to string, or type for log
-     * @param type $value 
-     * @return type
+     * @param  mixed $value 
+     * @return string
      */
     public static function getValueOrType($value) {
         if (is_scalar($value)){
