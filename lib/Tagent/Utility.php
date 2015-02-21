@@ -128,5 +128,17 @@ class Utility
 
         return "*".gettype($value)."*";
     }
+    /**
+     * get key value , check exist key no exist expection return. if not exist key, trow Exception
+     * @param  mixed $value 
+     * @param  $array
+     * @return mixed
+     */
+    public static function getValueArray($key, $array) {
+        if (array_key_exists($key, $array)) {
+            return $array[$key];
+        }
+        throw new \Exception('Not Found key') ;
+    }
 
 } // end of class
