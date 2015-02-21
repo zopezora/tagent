@@ -40,10 +40,11 @@ class Attribute
     public function __construct($source, ParseResource $resource)
     {
         $agent = Agent::self();
-        $pattern = "/(?:\"[^\"]*\"|'[^']*'|[^'\"\s]+)+/";
+        $pattern = "/(?:[^'\"\s]+|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*')+/";
         if (preg_match_all( $pattern,$source,$matches)) {
             $array = $matches[0];
-            $valid_pattern    = "/(?|(\w+)|(\[\w+\]))=(\"[^\"]*\"|'[^']*'|[^'\"\s]+)/";
+            $valid_pattern    = "/(?|(\w+)|(\[\w+\]))=([^'\"\s]+|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*')/";
+
             $reserved_pattern = "/^(".self::RESERVED_ATTRS.")$/i";
             $varkey_pattern   = "/^\[(\w+)\]$/i";
             foreach($array as $v) {
