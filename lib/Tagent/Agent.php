@@ -745,13 +745,13 @@ class Agent
             $flagGlobal = true;
             $this->line = $resource->line = 1;
             $this->buffer = '';
-            $this->log(E_NOTICE,'---------- PRE PROCESS ----------', true, $resource->module);
+            $this->log(E_NOTICE,'---------- PRE PROCESS [up to here]----------', true, $resource->module);
         }
 
         $sourceLine = $this->line + substr_count($source, "\n");
 
         $tag = $this->getConfig("agent_tag"); // default ag
-        $pattern = "/<".$tag."\s*((?:\"[^\"]*\"|'[^']*'|[^'\">])*?)\s*>((?:(?>[^<]+)|<(?!(".$tag."|\/".$tag.")(>|\s))|(?R))*)<\/".$tag.">/is";
+        $pattern = "/<".$tag."\s+((?:\"[^\"]*\"|'[^']*'|[^'\">])*?)\s*>((?:(?>[^<]+)|<(?!(".$tag."|\/".$tag.")(>|\s))|(?R))*)<\/".$tag.">/is";
         // output buffer
         $output = "";
         // <tag> search
@@ -891,7 +891,7 @@ class Agent
 
         // post-process global fetch
         if ($flagGlobal) {
-            $this->log(E_NOTICE,'---------- POST PROCESS ----------',true,$resource->module);
+            $this->log(E_NOTICE,'---------- POST PROCESS [from here]----------',true,$resource->module);
             // all module close sequence
             $modules = array_reverse($this->modules);
             $this->closeAllModule(array_keys($modules));
