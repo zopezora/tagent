@@ -16,12 +16,23 @@ class Utility
      */
     public static function removeQuote($str)
     {
-        $pattern = "/^(?|\"([^\"]*)\"|'([^']*)')$/";
+//      $pattern = "/^(?|\"([^\"]*)\"|'([^']*)')$/";
+        $pattern = "/^(?|\"((?:\\\\\"|[^\"])*)\"|'((?:\\\\'|[^'])*)')$/";
         if (preg_match( $pattern, $str, $matches))
         {
-            return $matches[1];
+            return self::unescapeQuote($matches[1]);
         }
         return false;
+    }
+    /**
+     * unescape Quote
+     * @param  string $str 
+     * @return string
+     */
+    public static function unescapeQuote($str) {
+        $str = preg_replace("/\\\\'/", "'", $str);
+        $str = preg_replace("/\\\\\"/", "\"", $str);
+        return $str;
     }
     /**
      * boolStr
