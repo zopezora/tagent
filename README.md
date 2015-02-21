@@ -28,7 +28,7 @@ PHP template parser.
 ```
 
 Reserved attributes are following   
-`module`,`pull`,`loop`,`parse`,`close`,`refresh`,`newmodule`,`template`,`check`,`debug`,`header`  
+`module`,`pull`,`loop`,`parse`,`close`,`refresh`,`reopen`,`template`,`check`,`debug`,`header`  
 
 Other attributes are used as a property array $params  (see. Module,pull,loop)  
 
