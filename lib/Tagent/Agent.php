@@ -414,12 +414,12 @@ class Agent
         return $instance;
     }
     /**
-     * new open module
+     * reopen module
      * @param  string $module 
      * @param  array  $params 
      * @return object
      */
-    protected function newOpenModule($module, $params = array())
+    protected function reopenModule($module, $params = array())
     {
         if (is_null($instance = $this->getModule($module))) {
             $instance = $this->createModule($module, $params);
@@ -427,7 +427,7 @@ class Agent
             $this->closeModule($module);
             $instance = $this->createModule($module, $params);
         }
-        $this->log(E_NOTICE, "new Open Module {$module}", true, $module);
+        $this->log(E_NOTICE, "Reopen Module {$module}", true, $module);
         return $instance;
     }
     /**
@@ -803,10 +803,13 @@ class Agent
             //module control
             if (isset($attrs->reserved["module"])) {
                 $module = $inResource->module = $attrs->reserved["module"];
-                $flagModule  = $this->openModule($module, $attrs->params);
+                $this->openModule($module, $attrs->params);
             } else {
                 $module = $inResource->module = $resource->module;
-                $flagModule  = false;
+            }
+            // reopen 
+            if (Utility::boolStr($attrs->reserved["reopen"])) {
+                $this->reopenModule($module, $attrs->params);
             }
             // close
             $forceClose = Utility::boolStr($attrs->reserved['close'], false);
@@ -869,7 +872,7 @@ class Agent
             $this->line = $matchLine;
 
             // close module
-            if ($flagModule && $forceClose ) {
+            if ($forceClose) {
                 if ($module !== 'GLOBAL' ) {
                     $this->closeModule($module);
                 } else {
