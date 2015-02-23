@@ -20,7 +20,7 @@ PHP template parser.
 ###Parse target
 
 * Tag .......... `<ag></ag>`  
-* Variable ... `{@VARIABLE}`  
+* Variable ... `{@VARIABLE}`  The inside of the `<ag></ag>` only
 
 ####Tag
 ```text

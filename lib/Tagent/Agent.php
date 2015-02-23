@@ -782,7 +782,11 @@ class Agent
             }
 
             // varFetch before tag
-            $output .= $resource->varFetch($before);
+            if ($flagGlobal) {
+                $output .= $this->buffer($before);
+            } else {
+                $output .= $resource->varFetch($before);
+            }
             unset($before);
             $this->line = $beforeLine;
 
@@ -886,7 +890,11 @@ class Agent
         } // end of while serch <tag>
 
         // remaining non Tag-match string 
-        $output .= $resource->varFetch($source);
+        if ($flagGlobal) {
+            $output .= $this->buffer($source);
+        } else {
+            $output .= $resource->varFetch($source);
+        }
         $this->line = $sourceLine;
 
         // post-process global fetch
