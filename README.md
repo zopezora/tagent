@@ -28,7 +28,7 @@ PHP template parser.
 ```
 
 Reserved attributes are following   
-`module`,`pull`,`loop`,`parse`,`close`,`refresh`,`reopen`,`template`,`check`,`debug`,`header`  
+`module`,`pull`,`loop`,`parse`,`close`,`refresh`,`reopen`,`template`,`check`,`debug`,`header`,`read`,`trim`  
 
 Other attributes are used as a property array $params  (see. Module,pull,loop)  
 
@@ -36,6 +36,7 @@ Other attributes are used as a property array $params  (see. Module,pull,loop)
 ```text
 {@scope:name|format}
    ex.{@foo}, {@m:foo}, {@foo|r},  {@global:foo|json}
+      {@foo|url|html} Specifies the multiple formats. Apply from left to right.
 ```
 
 * scope(option)  
@@ -53,6 +54,7 @@ a to z, A to Z. and '_' under bar
 `raw` or `r`  
 `url` or `u`  urlencode()  
 `json` or `j`  json_encode()  
+`base64` or `b` base64_encode()
 case-insensitive
 
 ###Exmaples

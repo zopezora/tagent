@@ -40,7 +40,7 @@ class ParseResource {
     public function varFetch($source)
     {
         $agent = Agent::self();
-        $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())(\w+)(?|((?:\[[^\[\]]+\])+)|())(?|\|(".self::OUTPUT_FORMATS.")|())}/i";
+        $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())((?>\w+))(?|((?:\[[^\[\]]+\])+)|())(?|((?:\|(?:".self::OUTPUT_FORMATS."))+)|())}/i";
         $output = "";
         while (preg_match($pattern, $source, $matches, PREG_OFFSET_CAPTURE)) {
             $match = $matches[0][0];
@@ -50,7 +50,9 @@ class ParseResource {
             $scope   = $matches[1][0];
             $key     = $matches[2][0];
             $index   = $matches[3][0];
-            $format  = $matches[4][0];
+
+            $format = ($matches[4][0]) ? substr($matches[4][0], 1) : '';
+            $formats = explode('|', $format);
 
             $key_array = array($key);
             if (preg_match_all("/\[([^\[\]]+)\]/", $index, $index_matches)) {
@@ -92,7 +94,10 @@ class ParseResource {
             }
             if (isset($var)) {
                 //format
-                $output .= $agent->buffer($this->format($var, $format));
+                foreach ($formats as $format){
+                    $var = $this->format($var, $format);
+                }
+                $output .= $agent->buffer($var);
             } else {
                 $agent->log(E_PARSE,'Not Found Variable  '.$match, true, $this->module);
                 if ($agent->debug()) {
