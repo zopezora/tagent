@@ -4,24 +4,26 @@ namespace Tagent;
 class Attribute
 {
     // const pattern
-    const RESERVED_ATTRS  = 'module|pull|loop|parse|close|refresh|header|reopen|template|check|debug|read|trim';
+    const RESERVED_ATTRS  = 'module|pull|loop|read|trim|parse|close|check|debug|store|header|reopen|restore|refresh|template';
     /**
      * @var array
      */
     public $reserved = array(
                 "module"        => null,
-                "pull"        => null,
+                "pull"          => null,
                 "loop"          => null,
-                "parse"         => null,
-                "close"         => null,
-                "refresh"       => null,
-                "header"        => null,
-                "reopen"        => null,
-                "template"      => null,
-                "check"         => null,
-                "debug"         => null,
                 "read"          => null,
                 "trim"          => null,
+                "parse"         => null,
+                "close"         => null,
+                "check"         => null,
+                "debug"         => null,
+                "store"         => null,
+                "header"        => null,
+                "reopen"        => null,
+                "restore"       => null,
+                "refresh"       => null,
+                "template"      => null,
     );
     /**
      * @var array

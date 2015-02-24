@@ -25,12 +25,28 @@ class ParseResource {
      * @var string
      */ 
     public $loopkey = '';
+
+    /**
+     * @var object Buffer
+     */
+    public $buffer = null;
     /**
      * constructor
      * @return void
      */
-    public function __construct()
+    public function __construct(Buffer $buffer)
     {
+        $this->buffer = $buffer;
+    }
+
+    /**
+     * buffer
+     * @param  string $str 
+     * @return string
+     */
+    public function buffer($str)
+    {
+        return $this->buffer->buffer($str);
     }
     /**
      * variable fetch .  search {@scope:name|format} , deployment to the value
@@ -41,7 +57,6 @@ class ParseResource {
     {
         $agent = Agent::self();
         $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())((?>\w+))(?|((?:\[[^\[\]]+\])+)|())(?|((?:\|(?:".self::OUTPUT_FORMATS."))+)|())}/i";
-        $output = "";
         while (preg_match($pattern, $source, $matches, PREG_OFFSET_CAPTURE)) {
             $match = $matches[0][0];
             $pos   = $matches[0][1];
@@ -61,7 +76,8 @@ class ParseResource {
                 }
             }
             // Before the string of match
-            $output .= $agent->buffer(substr($source, 0, $pos));
+            $this->buffer(substr($source, 0, $pos));
+
             $agent->line += substr_count(substr($source, 0, $pos), "\n");
             // --- parse variable priority ---
             //  1.pullVars   2.$loopVars   3.moduleVars   4.globalmoduleVars
@@ -97,11 +113,11 @@ class ParseResource {
                 foreach ($formats as $format){
                     $var = $this->format($var, $format);
                 }
-                $output .= $agent->buffer($var);
+                $this->buffer($var);
             } else {
                 $agent->log(E_PARSE,'Not Found Variable  '.$match, true, $this->module);
                 if ($agent->debug()) {
-                    $output .= $agent->buffer("*NotFound*".$match);
+                    $this->buffer("*NotFound*".$match);
                 } else {
                     // $output .= $match;
                 }
@@ -109,9 +125,8 @@ class ParseResource {
             // remaining non-match string 
             $source = substr($source, $pos + $len);
         }
-        $output .= $agent->buffer($source);
+        $this->buffer($source);
         $agent->line += substr_count($source,"\n");
-        return $output;
     }
     /**
      * convert format 

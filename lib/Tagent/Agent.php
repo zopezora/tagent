@@ -48,9 +48,9 @@ class Agent
      */
     protected $buffercallback = null;
     /**
-     * @var string output buffer
+     * @var array output buffer object contenaire
      */
-    protected $buffer = '';
+    protected $buffers = array();
     /**
      * @var object  logger object
      */
@@ -641,6 +641,37 @@ class Agent
         $this->log(E_ERROR,"Can not load template:".$filename, true, $module);
         return false;
     }
+    // buffer ----------------------------------------------------------------------------
+    /**
+     * create buffer
+     * @param  string $str 
+     * @return object
+     */
+    public function createBuffer($name = '__GLOBAL__')
+    {
+        return $this->buffers[$name] = new Buffer;
+    }
+    /**
+     * buffer
+     * @param  string $str 
+     * @param  string $name
+     * @return string
+     */
+    public function buffer($str, $name = '__GLOBAL__')
+    {
+        $this->buffers[$name] .= $str;
+        return $str;
+    }
+
+    /**
+     * get buffer
+     * @param  string $name 
+     * @return object|null
+     */
+    public function getBuffer($name = '__GLOBAL__')
+    {
+        return (isset($this->buffers[$name])) ? $this->buffers[$name] : null ;
+    }
     // fetch & parse   --------------------------------------------------------------------
     /**
      * shutdown display   resister_shutdown_function
@@ -665,7 +696,7 @@ class Agent
 
                 if ($e[type]==E_ERROR) {
                     $ob   = $str;
-                    $str  = $this->buffer;
+                    $str  = $this->getBuffer();
                     $str .= "<hr>".$ob;
                     $str .= "<hr>".$this->logger->report($this->log_reporting());
                 }
@@ -714,6 +745,11 @@ class Agent
             return false;
         }
     }
+    /**
+     * read file
+     * @param  string $filename 
+     * @return string
+     */
     public function readFile($filename)
     {
         if (is_readable($filename) &&  ($source = file_get_contents($filename)) !== false) {
@@ -722,15 +758,10 @@ class Agent
         $this->log(E_WARNING,'readFile() not found filename:'.$filename, true, 'AGENT');
         return false;
     }
-    public function buffer($str)
-    {
-        $this->buffer .= $str;
-        return $str;
-    }
     /**
      * fetch tag parse . Retrieve nested 'agent tag' by recursive call.
-     * @todo parameter object (module,pullVars,loopVars,loopkey,line)
-     * @param  string  $source
+     * @todo Buffer, attribute store restore
+     * @param  string $source
      * @param  object $resource
      * @return string
      */
@@ -740,11 +771,11 @@ class Agent
         $flagGlobal = false;
         if (is_null($resource)) {
             $this->line = 0;
-            $resource = new ParseResource;
+            $buffer = $this->createBuffer();
+            $resource = new ParseResource($buffer);
             $this->openModule('GLOBAL');
             $flagGlobal = true;
             $this->line = $resource->line = 1;
-            $this->buffer = '';
             $this->log(E_NOTICE,'---------- PRE PROCESS [up to here]----------', true, $resource->module);
         }
 
@@ -752,8 +783,6 @@ class Agent
 
         $tag = $this->getConfig("agent_tag"); // default ag
         $pattern = "/<".$tag."\s+((?:\"[^\"]*\"|'[^']*'|[^'\">])*?)\s*>((?:(?>[^<]+)|<(?!(".$tag."|\/".$tag.")(>|\s))|(?R))*)<\/".$tag.">/is";
-        // output buffer
-        $output = "";
         // <tag> search
         while (preg_match($pattern, $source, $matches, PREG_OFFSET_CAPTURE)) {
             $match = $matches[0][0]; // <tag></tag>
@@ -783,9 +812,9 @@ class Agent
 
             // varFetch before tag
             if ($flagGlobal) {
-                $output .= $this->buffer($before);
+                $resource->buffer($before);
             } else {
-                $output .= $resource->varFetch($before);
+                $resource->varFetch($before);
             }
             unset($before);
             $this->line = $beforeLine;
@@ -793,7 +822,6 @@ class Agent
             // attribute parse
             $attrs = new Attribute($attr, $resource);
 
-            $inResource = new ParseResource;
             // debug
             if (isset($attrs->reserved['debug'])) {
                 $this->debug(Utility::boolStr($attrs->reserved['debug']));
@@ -804,6 +832,16 @@ class Agent
                 $this->log(E_NOTICE,"header({$header})",true,'AGENT');
                 header($header);
             }
+            // store
+            if (isset($attrs->reserved["store"])) {
+                $store = $attrs->reserved["store"];
+                $buffer = $this->createBuffer($store);
+                $this->log(E_NOTICE,"Store: {$store}", true, $resource->module);
+            } else {
+                $buffer = $resource->buffer;
+            }
+            // resource 
+            $inResource = new ParseResource($buffer);
             //module control
             if (isset($attrs->reserved["module"])) {
                 $module = $inResource->module = $attrs->reserved["module"];
@@ -837,14 +875,25 @@ class Agent
                             : array('_NOLOOP_'=>$resource->loopVars);
             // template
             if (isset($attrs->reserved['template'])) {
-                if ( ($template = $this->getTemplate($attrs->reserved['template'], $module))!==false) {
-                    $inTag = $template; // replace inTag to template
+                if ( ($content = $this->getTemplate($attrs->reserved['template'], $module))!==false) {
+                    $inTag = $content; // replace inTag to template
                 }
             }
             // read
             if (isset($attrs->reserved['read'])) {
                 if ( ($content = $this->readFile($attrs->reserved['read'], $module))!==false) {
                     $inTag = $content; // replace inTag to file content.
+                }
+            }
+            // restore
+            if (isset($attrs->reserved['restore'])) {
+                $restore = $attrs->reserved['restore'];
+                if (! is_null($buffer = $this->getBuffer($restore))) {
+                    $inTag = (string) $buffer;
+                    $attrs->reserved['parse'] = false;
+                    $this->log(E_NOTICE,"Restore: {$restore}", true, $resource->module);
+                } else {
+                    $this->log(E_WARNING,"Restore: {$restore} Not Found Buffer", true, $resource->module);
                 }
             }
             // trim
@@ -865,11 +914,11 @@ class Agent
                     $this->line = $beforeLine + $trimLineTag; 
                     $inResource->loopkey = ($key !== '_NOLOOP_') ? $key : '';
                     // recursive fetch inside
-                    $output .= $this->fetch($inTag, $inResource);
+                    $this->fetch($inTag, $inResource);
                 }
             } else {
                 // parse = no
-                $output .= $this->buffer($inTag);
+                $inResource->buffer($inTag);
                 $this->log(E_NOTICE,'Parse: No', true, $resource->module);
             }
 
@@ -891,9 +940,9 @@ class Agent
 
         // remaining non Tag-match string 
         if ($flagGlobal) {
-            $output .= $this->buffer($source);
+            $resource->buffer($source);
         } else {
-            $output .= $resource->varFetch($source);
+            $resource->varFetch($source);
         }
         $this->line = $sourceLine;
 
@@ -904,8 +953,8 @@ class Agent
             $modules = array_reverse($this->modules);
             $this->closeAllModule(array_keys($modules));
             $this->line = 0;
+            return $resource->buffer;
         }
-        return $output;
     }
     // Error for debug -------------------------------------------
     /**
