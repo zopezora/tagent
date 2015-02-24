@@ -69,7 +69,7 @@ class Attribute
                         $value = $ret;
                     } else {
                         // un quate value, try for fetch {@VARIABLE}
-                        $value = $resource->varFetch($value);
+                        $value = $resource->varFetch($value, true);
                     }
                     $this->{$parentkey}[$key] = $value;
                 } else {

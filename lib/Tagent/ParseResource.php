@@ -50,12 +50,14 @@ class ParseResource {
     }
     /**
      * variable fetch .  search {@scope:name|format} , deployment to the value
-     * @param  string $source 
-     * @return string
+     * @param  string $source
+     * @param  bool   $return  .true...return string, false...buffering   
+     * @return string|void
      */
-    public function varFetch($source)
+    public function varFetch($source, $return = false)
     {
         $agent = Agent::self();
+        $output = '';
         $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())((?>\w+))(?|((?:\[[^\[\]]+\])+)|())(?|((?:\|(?:".self::OUTPUT_FORMATS."))+)|())}/i";
         while (preg_match($pattern, $source, $matches, PREG_OFFSET_CAPTURE)) {
             $match = $matches[0][0];
@@ -76,9 +78,12 @@ class ParseResource {
                 }
             }
             // Before the string of match
-            $this->buffer(substr($source, 0, $pos));
-
-            $agent->line += substr_count(substr($source, 0, $pos), "\n");
+            if ($return) {
+                $output .= substr($source, 0, $pos);
+            } else {
+                $this->buffer(substr($source, 0, $pos));
+                $agent->line += substr_count(substr($source, 0, $pos), "\n");
+            }
             // --- parse variable priority ---
             //  1.pullVars   2.$loopVars   3.moduleVars   4.globalmoduleVars
             $scope = ($scope == "") ? "*" : strtoupper($scope[0]);
@@ -113,20 +118,30 @@ class ParseResource {
                 foreach ($formats as $format){
                     $var = $this->format($var, $format);
                 }
-                $this->buffer($var);
             } else {
                 $agent->log(E_PARSE,'Not Found Variable  '.$match, true, $this->module);
                 if ($agent->debug()) {
-                    $this->buffer("*NotFound*".$match);
+                    $var = "*NotFound*:{$match}";
                 } else {
-                    // $output .= $match;
+                    $var = "";  // or $match
                 }
+            }
+            if ($return) {
+                $output .= $var;
+            } else {
+                $this->buffer($var);
             }
             // remaining non-match string 
             $source = substr($source, $pos + $len);
+
+        } // end of while
+
+        if ($return) {
+            return $output.$source;
+        } else {
+            $this->buffer($source);
+            $agent->line += substr_count($source,"\n");
         }
-        $this->buffer($source);
-        $agent->line += substr_count($source,"\n");
     }
     /**
      * convert format 
