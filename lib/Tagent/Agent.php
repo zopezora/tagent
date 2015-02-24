@@ -775,7 +775,7 @@ class Agent
             $resource = new ParseResource($buffer);
             $this->openModule('GLOBAL');
             $flagGlobal = true;
-            $this->line = $resource->line = 1;
+            $this->line = 1;
             $this->log(E_NOTICE,'---------- PRE PROCESS [up to here]----------', true, $resource->module);
         }
 
@@ -919,9 +919,10 @@ class Agent
             } else {
                 // parse = no
                 $inResource->buffer($inTag);
-                $this->log(E_NOTICE,'Parse: No', true, $resource->module);
+                if (! isset($attrs->reserved['restore'])) {
+                    $this->log(E_NOTICE,'Parse: No', true, $resource->module);
+                }
             }
-
             $this->line = $matchLine;
 
             // close module
@@ -932,10 +933,8 @@ class Agent
                     $this->log(E_WARNING, "GLOBAL module can not be forced close", true, $module);
                 }
             }
-
             // line incriment source trim 
             $this->line += $trimLineSorce;
-
         } // end of while serch <tag>
 
         // remaining non Tag-match string 
