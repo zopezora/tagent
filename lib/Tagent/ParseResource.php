@@ -58,7 +58,8 @@ class ParseResource {
     {
         $agent = Agent::self();
         $output = '';
-        $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())((?>\w+))(?|((?:\[[^\[\]]+\])+)|())(?|((?:\|(?:".self::OUTPUT_FORMATS."))+)|())}/i";
+        $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())((?>\w+))(?|((?:\[(?:(?>[^\[\]]+)|(?R))\])+)|())(?|((?:\|(?:".self::OUTPUT_FORMATS."))+)|())}/i";
+
         while (preg_match($pattern, $source, $matches, PREG_OFFSET_CAPTURE)) {
             $match = $matches[0][0];
             $pos   = $matches[0][1];
@@ -72,9 +73,9 @@ class ParseResource {
             $formats = explode('|', $format);
 
             $key_array = array($key);
-            if (preg_match_all("/\[([^\[\]]+)\]/", $index, $index_matches)) {
+            if (preg_match_all("/\[((?:(?>[^\[\]]+)|(?R))*)\]/", $index, $index_matches)) {
                 foreach ($index_matches[1] as $im) {
-                    $key_array[] = $im;
+                    $key_array[] = $this->varFetch($im, true);
                 }
             }
             // Before the string of match
@@ -120,11 +121,7 @@ class ParseResource {
                 }
             } else {
                 $agent->log(E_PARSE,'Not Found Variable  '.$match, true, $this->module);
-                if ($agent->debug()) {
-                    $var = "*NotFound*:{$match}";
-                } else {
-                    $var = "";  // or $match
-                }
+                $var = $match;
             }
             if ($return) {
                 $output .= $var;
