@@ -823,18 +823,18 @@ class Agent
             $attrs = new Attribute($attr, $resource);
 
             // debug
-            if (isset($attrs->reserved['debug'])) {
-                $this->debug(Utility::boolStr($attrs->reserved['debug']));
+            if (isset($attrs->reserved['DEBUG'])) {
+                $this->debug(Utility::boolStr($attrs->reserved['DEBUG']));
             }
             // header
-            if (isset($attrs->reserved["header"])) {
-                $header = HttpHeader::header($attrs->reserved["header"]);
+            if (isset($attrs->reserved["HEADER"])) {
+                $header = HttpHeader::header($attrs->reserved["HEADER"]);
                 $this->log(E_NOTICE,"header({$header})",true,'AGENT');
                 header($header);
             }
             // store
-            if (isset($attrs->reserved["store"])) {
-                $store = $attrs->reserved["store"];
+            if (isset($attrs->reserved["STORE"])) {
+                $store = $attrs->reserved["STORE"];
                 $buffer = $this->createBuffer($store);
                 $this->log(E_NOTICE,"Store: {$store}", true, $resource->module);
             } else {
@@ -843,25 +843,25 @@ class Agent
             // resource 
             $inResource = new ParseResource($buffer);
             //module control
-            if (isset($attrs->reserved["module"])) {
-                $module = $inResource->module = $attrs->reserved["module"];
+            if (isset($attrs->reserved["MODULE"])) {
+                $module = $inResource->module = $attrs->reserved["MODULE"];
                 $this->openModule($module, $attrs->params);
             } else {
                 $module = $inResource->module = $resource->module;
             }
             // reopen 
-            if (Utility::boolStr($attrs->reserved["reopen"])) {
+            if (Utility::boolStr($attrs->reserved["REOPEN"])) {
                 $this->reopenModule($module, $attrs->params);
             }
             // close
-            $forceClose = Utility::boolStr($attrs->reserved['close'], false);
+            $forceClose = Utility::boolStr($attrs->reserved['CLOSE'], false);
             // refresh
-            if (Utility::boolStr($attrs->reserved['refresh'], false)) {
+            if (Utility::boolStr($attrs->reserved['REFRESH'], false)) {
                 $this->refreshModule($module, $attrs->params);
             }
             // pull vars
-            if (isset($attrs->reserved["pull"])) {
-                $inResource->pullVars = $this->getPull($attrs->reserved["pull"], $module, $attrs->params);
+            if (isset($attrs->reserved["PULL"])) {
+                $inResource->pullVars = $this->getPull($attrs->reserved["PULL"], $module, $attrs->params);
             } else {
                 $inResource->pullVars = $resource->pullVars;
             }
@@ -870,45 +870,45 @@ class Agent
                 $inResource->pullVars[$key] = $value;
             }
             // loop vars
-            $inLoopVarsList = (isset($attrs->reserved["loop"]))
-                            ? $this->getLoop($attrs->reserved["loop"], $module, $attrs->params)
+            $inLoopVarsList = (isset($attrs->reserved["LOOP"]))
+                            ? $this->getLoop($attrs->reserved["LOOP"], $module, $attrs->params)
                             : array('_NOLOOP_'=>$resource->loopVars);
             // template
-            if (isset($attrs->reserved['template'])) {
-                if ( ($content = $this->getTemplate($attrs->reserved['template'], $module))!==false) {
+            if (isset($attrs->reserved['TEMPLATE'])) {
+                if ( ($content = $this->getTemplate($attrs->reserved['TEMPLATE'], $module))!==false) {
                     $inTag = $content; // replace inTag to template
                 }
             }
             // read
-            if (isset($attrs->reserved['read'])) {
-                if ( ($content = $this->readFile($attrs->reserved['read'], $module))!==false) {
+            if (isset($attrs->reserved['READ'])) {
+                if ( ($content = $this->readFile($attrs->reserved['READ'], $module))!==false) {
                     $inTag = $content; // replace inTag to file content.
                 }
             }
             // restore
-            if (isset($attrs->reserved['restore'])) {
-                $restore = $attrs->reserved['restore'];
+            if (isset($attrs->reserved['RESTORE'])) {
+                $restore = $attrs->reserved['RESTORE'];
                 if (! is_null($buffer = $this->getBuffer($restore))) {
                     $inTag = (string) $buffer;
-                    $attrs->reserved['parse'] = false;
+                    $attrs->reserved['PARSE'] = false;
                     $this->log(E_NOTICE,"Restore: {$restore}", true, $resource->module);
                 } else {
                     $this->log(E_WARNING,"Restore: {$restore} Not Found Buffer", true, $resource->module);
                 }
             }
             // trim
-            if (Utility::boolStr($attrs->reserved['trim'], false)) {
+            if (Utility::boolStr($attrs->reserved['TRIM'], false)) {
                 preg_match('/^\s*/', $inTag, $trimMatch);
                 $trimLineTag += substr_count($trimMatch[0],"\n");
                 $inTag = preg_replace('/(^\s*|\s*$)/', '', $inTag);
             }
             // check
-            if (Utility::boolStr($attrs->reserved['check'], false)) {
+            if (Utility::boolStr($attrs->reserved['CHECK'], false)) {
                 $this->checkResourceLog($inResource, $inLoopVarsList);
             }
 
             // output parse switch
-            if (Utility::boolStr($attrs->reserved['parse'], true) ) {
+            if (Utility::boolStr($attrs->reserved['PARSE'], true) ) {
                 // parse = yes
                 foreach($inLoopVarsList as $key => $inResource->loopVars) {
                     $this->line = $beforeLine + $trimLineTag; 
@@ -919,7 +919,7 @@ class Agent
             } else {
                 // parse = no
                 $inResource->buffer($inTag);
-                if (! isset($attrs->reserved['restore'])) {
+                if (! isset($attrs->reserved['RESTORE'])) {
                     $this->log(E_NOTICE,'Parse: No', true, $resource->module);
                 }
             }

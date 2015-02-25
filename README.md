@@ -17,6 +17,24 @@ PHP template parser.
 
 ##Template  
 
+> example  
+
+```html
+<html>
+  <body>
+    <h1>{@title}</h1>
+    <ag MODULE='Foo'>
+      <p>{@bar}</p>
+      <ul>
+      <ag LOOP='baz'>
+        <li>{@l:item}</li>
+      </ag>
+      </ul>
+     </ag>
+  </body>
+</html>
+```
+
 ###Parse target
 
 * Tag .......... `<ag></ag>`  
@@ -24,13 +42,32 @@ PHP template parser.
 
 ####Tag
 ```text
-<ag ATTRIBUTE=VALUE>{@VARIABLE}</ag>
+<ag ATTRIBUTE=VALUE></ag>
 ```
 
-Reserved attributes are following   
-`module`,`pull`,`loop`,`parse`,`close`,`refresh`,`reopen`,`template`,`check`,`debug`,`header`,`read`,`trim`,`store`,`restore`  
+Attribute names are case-sensitive.  
 
-Other attributes are used as a property array $params  (see. Module,pull,loop)  
+Reserved attributes are all upper-case as follows.   
+`MODULE`,`PULL`,`LOOP`,`PARSE`,`CLOSE`,`REFRESH`,`REOPEN`,`TEMPLATE`,`CHECK`,`DEBUG`,`HEADER`,`READ`,`TRIM`,`STORE`,`RESTORE`  
+
+Therefore, it does not conflict with future reserved attributes Using lowercase.  
+User attributes are used as a properties array $params  (see 'MODULE', 'PULL', 'LOOP' etc.)  
+
+```text
+<ag MODULE=Foo></ag>
+<ag MODULE='Foo'></ag>
+<ag MODULE="Foo"></ag>
+
+<!-- variable value  -->
+<ag MODULE='Foo' bar={@var}></ag>
+
+<!-- escape quotation mark -->
+<ag MODULE='Foo' bar="It's cool"></ag>
+<ag MODULE='Foo' bar='It\'s cool'></ag>
+
+<!-- [attribute] -->
+<ag [foo]='bar'>{@foo}</ag>  
+```
 
 ####Variable
 ```text
@@ -57,26 +94,12 @@ a to z, A to Z. and '_' under bar
 `base64` or `b` base64_encode()
 case-insensitive
 
-###Exmaples
+###Other exmaples
 
-> template.tpl  / .php
-
-```html
-<h1>{@title}</h1>
-<ag module='Foo'>
- <p>{@bar}</p>
- <ul>
-   <ag loop='baz'>
-     <li>{@l:item}</li>
-   </ag>
- </ul>
-</ag>
-```
-
-> javascript html tag <script></script>  use jQuery parseJSON.  
+> javascript html script tag   use jQuery parseJSON.  
 
 ```html
-<ag module='Foo'>
+<ag MODULE='Foo'>
 <script>
 $( document ).ready(function() {
     var obj = $.parseJSON('{@bar|json}');
@@ -88,7 +111,7 @@ $( document ).ready(function() {
 > javascript script file  use jQuery parseJSON    
 
 ```js
-/* <ag header ='javascript' module='Foo'></ag> */
+/* <ag HEADER ='javascript' MODULE='Foo'></ag> */
 $( document ).ready(function() {
   var obj = $.parseJSON('{@bar|json}');
 });
@@ -98,7 +121,7 @@ $( document ).ready(function() {
 > json.php  for ajax.  
 
 ```php
-<ag header ='json' module='Foo' trim='on'>
+<ag HEADER ='json' MODULE='Foo' TRIM='on'>
     {@bar|json}
 </ag>
 ```
@@ -106,8 +129,8 @@ $( document ).ready(function() {
 > css.php
 
 ```css
-/* <ag header='Content-Type: text/css; charset=utf-8'></ag> 
-   <ag module='Foo' pull='bar' border='1px solid #aaa'> */
+/* <ag HEADER='css'></ag> 
+   <ag MODULE='Foo' PULL='bar' border='1px solid #aaa'> */
 div.bar {
   border : {@border};
 }
@@ -120,8 +143,8 @@ div.baz {
 > jpeg.php
 
 ```php
-<ag header='jpeg' module='Foo'>
-   <ag read={@bar}></ag>
+<ag HEADER='jpeg' MODULE='Foo' TRIM='on'>
+<ag READ={@bar}></ag>
 </ag>
 ```
 
@@ -132,7 +155,7 @@ use composer
 ```
 [project] - [public] - WEB DOCUMENT ROOT
           |            index.php
-          |            (-some-)
+          |            (.......)
           |- [ag]-[Module_GLOBAL] -[Pulls]    - *.php 
           |      |                 [Loops]    - *.php
           |      |                 [Templates]- *.tpl
@@ -156,22 +179,22 @@ use composer
 
 | Directory      | Filename   |Class                   | TAG attribute                           |
 |----------------|------------|------------------------|-----------------------------------------|
-|[Module\_Foo]   |Module.php  |\Module\_Foo\Module     |`<ag module='Foo'></ag>`                 |
-|[Pulls]         |bar.php     |\Module\_Foo\Pulls\bar  |`<ag module='Foo' pull='bar'></ag>`      |
-|[Loops]         |baz.php     |\Module\_Foo\Loops\baz  |`<ag module='Foo' loop='baz'></ag>`      |
-|[Templates]     |qux.tpl     |                        |`<ag module='Foo' template='qux'></ag>`  |
+|[Module\_Foo]   |Module.php  |\Module\_Foo\Module     |`<ag MODULE='Foo'></ag>`                 |
+|[Pulls]         |bar.php     |\Module\_Foo\Pulls\bar  |`<ag MODULE='Foo' PULL='bar'></ag>`      |
+|[Loops]         |baz.php     |\Module\_Foo\Loops\baz  |`<ag MODULE='Foo' LOOP='baz'></ag>`      |
+|[Templates]     |qux.tpl     |                        |`<ag MODULE='Foo' TEMPLATE='qux'></ag>`  |
 
 
 ###Fixed method name  
 
 | Method     | Class                    |TAG attribute                         |
 |------------|--------------------------|--------------------------------------|
-|onRefresh() |\Module\_Foo\Module       |`<ag module='Foo' refresh='on'></ag>` |
-|onClose()   |\Module\_Foo\Module       |`<ag module='Foo' close='on'></ag>`   |
-|pull\_bar() |\Module\_Foo\Module       |`<ag module='Foo' pull='bar'></ag>`   |
-|pull\_bar() |\Module\_Foo\Pulls\bar    |`<ag module='Foo' pull='bar'></ag>`   |
-|loop\_baz() |\Module\_Foo\Module       |`<ag module='Foo' loop='baz'></ag>`   |
-|loop\_baz() |\Module\_Foo\Loops\baz    |`<ag module='Foo' loop='baz'></ag>`   |
+|onRefresh() |\Module\_Foo\Module       |`<ag MODULE='Foo' REFRESH='on'></ag>` |
+|onClose()   |\Module\_Foo\Module       |`<ag MODULE='Foo' CLOSE='on'></ag>`   |
+|pull\_bar() |\Module\_Foo\Module       |`<ag MODULE='Foo' PULL='bar'></ag>`   |
+|pull\_bar() |\Module\_Foo\Pulls\bar    |`<ag MODULE='Foo' PULL='bar'></ag>`   |
+|loop\_baz() |\Module\_Foo\Module       |`<ag MODULE='Foo' LOOP='baz'></ag>`   |
+|loop\_baz() |\Module\_Foo\Loops\baz    |`<ag MODULE='Foo' LOOP='baz'></ag>`   |
 
 * onRefresh() ... RefreshModuleInterface
 * onClose()   ... CloseModuleInterface

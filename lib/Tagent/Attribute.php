@@ -4,26 +4,26 @@ namespace Tagent;
 class Attribute
 {
     // const pattern
-    const RESERVED_ATTRS  = 'module|pull|loop|read|trim|parse|close|check|debug|store|header|reopen|restore|refresh|template';
+    const RESERVED_ATTRS  = 'MODULE|PULL|LOOP|READ|TRIM|PARSE|CLOSE|CHECK|DEBUG|STORE|HEADER|REOPEN|RESTORE|REFRESH|TEMPLATE';
     /**
      * @var array
      */
     public $reserved = array(
-                "module"        => null,
-                "pull"          => null,
-                "loop"          => null,
-                "read"          => null,
-                "trim"          => null,
-                "parse"         => null,
-                "close"         => null,
-                "check"         => null,
-                "debug"         => null,
-                "store"         => null,
-                "header"        => null,
-                "reopen"        => null,
-                "restore"       => null,
-                "refresh"       => null,
-                "template"      => null,
+                "MODULE"        => null,
+                "PULL"          => null,
+                "LOOP"          => null,
+                "READ"          => null,
+                "TRIM"          => null,
+                "PARSE"         => null,
+                "CLOSE"         => null,
+                "CHECK"         => null,
+                "DEBUG"         => null,
+                "STORE"         => null,
+                "HEADER"        => null,
+                "REOPEN"        => null,
+                "RESTORE"       => null,
+                "REFRESH"       => null,
+                "TEMPLATE"      => null,
     );
     /**
      * @var array
@@ -47,7 +47,7 @@ class Attribute
             $array = $matches[0];
             $valid_pattern    = "/(?|(\w+)|(\[\w+\]))=([^'\"\s]+|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*')/";
 
-            $reserved_pattern = "/^(".self::RESERVED_ATTRS.")$/i";
+            $reserved_pattern = "/^(".self::RESERVED_ATTRS.")$/";
             $varkey_pattern   = "/^\[(\w+)\]$/i";
             foreach($array as $v) {
                 // valid attribute
@@ -58,7 +58,6 @@ class Attribute
                     $parentkey = 'params';
                     if (preg_match($reserved_pattern, $key, $attr_match)){
                         $parentkey = 'reserved';
-                        $key = strtolower($key);
                     } else {
                         if (preg_match($varkey_pattern, $key, $varkey_match)) {
                             $parentkey = 'appends';
