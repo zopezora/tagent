@@ -22,11 +22,11 @@ PHP template parser.
 ```html
 <html>
   <body>
-    <h1>{@title}</h1>
-    <ag MODULE='Foo'>
+    <ag><h1>{@title}</h1></ag>
+    <ag Module='Foo'>
       <p>{@bar}</p>
       <ul>
-      <ag LOOP='baz'>
+      <ag Loop='baz'>
         <li>{@l:item}</li>
       </ag>
       </ul>
@@ -47,23 +47,23 @@ PHP template parser.
 
 Attribute names are case-sensitive.  
 
-Reserved attributes are all upper-case as follows.   
-`MODULE`,`PULL`,`LOOP`,`PARSE`,`CLOSE`,`REFRESH`,`REOPEN`,`TEMPLATE`,`CHECK`,`DEBUG`,`HEADER`,`READ`,`TRIM`,`STORE`,`RESTORE`  
+The first letter of reserved attribute name is upper case.
+`Module`,`Pull`,`Loop`,`Parse`,`Close`,`Refresh`,`Reopen`,`Template`,`Check`,`Debug`,`Header`,`Read`,`Trim`,`Store`,`Restore`  
 
-Therefore, it does not conflict with future reserved attributes Using lowercase.  
-User attributes are used as a properties array $params  (see 'MODULE', 'PULL', 'LOOP' etc.)  
+(Recommend) The first letter of the user attributes name is lowercase so as not to name collision.  
+The User attributes are used as a properties array $params  (see 'Module', 'Pull', 'Loop' etc.)  
 
 ```text
-<ag MODULE=Foo></ag>
-<ag MODULE='Foo'></ag>
-<ag MODULE="Foo"></ag>
+<ag Module=Foo></ag>
+<ag Module='Foo'></ag>
+<ag Module="Foo"></ag>
 
 <!-- variable value  -->
-<ag MODULE='Foo' bar={@var}></ag>
+<ag Module='Foo' bar={@var}></ag>
 
 <!-- escape quotation mark -->
-<ag MODULE='Foo' bar="It's cool"></ag>
-<ag MODULE='Foo' bar='It\'s cool'></ag>
+<ag Module='Foo' bar="It's cool"></ag>
+<ag Module='Foo' bar='It\'s cool'></ag>
 
 <!-- [attribute] -->
 <ag [foo]='bar'>{@foo}</ag>  
@@ -99,7 +99,7 @@ case-insensitive
 > javascript html script tag   use jQuery parseJSON.  
 
 ```html
-<ag MODULE='Foo'>
+<ag Module='Foo'>
 <script>
 $( document ).ready(function() {
     var obj = $.parseJSON('{@bar|json}');
@@ -111,7 +111,7 @@ $( document ).ready(function() {
 > javascript script file  use jQuery parseJSON    
 
 ```js
-/* <ag HEADER ='javascript' MODULE='Foo'></ag> */
+/* <ag Header ='javascript' Module='Foo'></ag> */
 $( document ).ready(function() {
   var obj = $.parseJSON('{@bar|json}');
 });
@@ -121,7 +121,7 @@ $( document ).ready(function() {
 > json.php  for ajax.  
 
 ```php
-<ag HEADER ='json' MODULE='Foo' TRIM='on'>
+<ag Header ='json' Module='Foo' Trim='on'>
     {@bar|json}
 </ag>
 ```
@@ -129,8 +129,8 @@ $( document ).ready(function() {
 > css.php
 
 ```css
-/* <ag HEADER='css'></ag> 
-   <ag MODULE='Foo' PULL='bar' border='1px solid #aaa'> */
+/* <ag Header='css'></ag> 
+   <ag Module='Foo' Pull='bar' border='1px solid #aaa'> */
 div.bar {
   border : {@border};
 }
@@ -143,8 +143,8 @@ div.baz {
 > jpeg.php
 
 ```php
-<ag HEADER='jpeg' MODULE='Foo' TRIM='on'>
-<ag READ={@bar}></ag>
+<ag Header='jpeg' Module='Foo' Trim='on'>
+<ag Read={@bar}></ag>
 </ag>
 ```
 
@@ -179,22 +179,22 @@ use composer
 
 | Directory      | Filename   |Class                   | TAG attribute                           |
 |----------------|------------|------------------------|-----------------------------------------|
-|[Module\_Foo]   |Module.php  |\Module\_Foo\Module     |`<ag MODULE='Foo'></ag>`                 |
-|[Pulls]         |bar.php     |\Module\_Foo\Pulls\bar  |`<ag MODULE='Foo' PULL='bar'></ag>`      |
-|[Loops]         |baz.php     |\Module\_Foo\Loops\baz  |`<ag MODULE='Foo' LOOP='baz'></ag>`      |
-|[Templates]     |qux.tpl     |                        |`<ag MODULE='Foo' TEMPLATE='qux'></ag>`  |
+|[Module\_Foo]   |Module.php  |\Module\_Foo\Module     |`<ag Module='Foo'></ag>`                 |
+|[Pulls]         |bar.php     |\Module\_Foo\Pulls\bar  |`<ag Module='Foo' Pull='bar'></ag>`      |
+|[Loops]         |baz.php     |\Module\_Foo\Loops\baz  |`<ag Module='Foo' Loop='baz'></ag>`      |
+|[Templates]     |qux.tpl     |                        |`<ag Module='Foo' Template='qux'></ag>`  |
 
 
 ###Fixed method name  
 
 | Method     | Class                    |TAG attribute                         |
 |------------|--------------------------|--------------------------------------|
-|onRefresh() |\Module\_Foo\Module       |`<ag MODULE='Foo' REFRESH='on'></ag>` |
-|onClose()   |\Module\_Foo\Module       |`<ag MODULE='Foo' CLOSE='on'></ag>`   |
-|pull\_bar() |\Module\_Foo\Module       |`<ag MODULE='Foo' PULL='bar'></ag>`   |
-|pull\_bar() |\Module\_Foo\Pulls\bar    |`<ag MODULE='Foo' PULL='bar'></ag>`   |
-|loop\_baz() |\Module\_Foo\Module       |`<ag MODULE='Foo' LOOP='baz'></ag>`   |
-|loop\_baz() |\Module\_Foo\Loops\baz    |`<ag MODULE='Foo' LOOP='baz'></ag>`   |
+|onRefresh() |\Module\_Foo\Module       |`<ag Module='Foo' Refresh='on'></ag>` |
+|onClose()   |\Module\_Foo\Module       |`<ag Module='Foo' Close='on'></ag>`   |
+|pull\_bar() |\Module\_Foo\Module       |`<ag Module='Foo' Pull='bar'></ag>`   |
+|pull\_bar() |\Module\_Foo\Pulls\bar    |`<ag Module='Foo' Pull='bar'></ag>`   |
+|loop\_baz() |\Module\_Foo\Module       |`<ag Module='Foo' Loop='baz'></ag>`   |
+|loop\_baz() |\Module\_Foo\Loops\baz    |`<ag Module='Foo' Loop='baz'></ag>`   |
 
 * onRefresh() ... RefreshModuleInterface
 * onClose()   ... CloseModuleInterface
@@ -326,7 +326,7 @@ true, Log report to work
 
     "log_reporting"    => E_ALL,
 
-E_ERROR | E_WARNING | E_PARSE | E_NOTICE | E_DEPRECATED  
+E_ERROR | E_WARNING | E_Parse | E_NOTICE | E_DEPRECATED  
 'check' log is assigned to E_DEPRECATED  
 
     "shutdown_display" => true,
@@ -374,7 +374,7 @@ $agent->set('name', $mixed, 'module');    // $mixed ... anyone
 $agent->set('name', null, 'module');      // unset
 $bool = $agent->has('name', 'module');   
 $obj = $agent->get('name', 'module');  
-$obj = $agent->get('name',);              // default module='GLOAL' same bellow 
+$obj = $agent->get('name',);              // default Module='GLOAL' same bellow 
 
 // module variable
 $agent->setVariable('key' , 'value' ,'module'); // value is scalar or array or object
@@ -416,9 +416,9 @@ Pre-process start parse, automatically open module 'GLOBAL'
 <html>
   <body>
     <!-- here, 'GLOBAL' current module -->
-    <ag module='Foo'>                  open module 'Foo'
+    <ag Module='Foo'>                  open module 'Foo'
       <!-- here, 'Foo' current module  -->
-      <ag module='Bar' close='yes'>    Force close specify  
+      <ag Module='Bar' close='yes'>    Force close specify  
         <!-- here, 'Bar' current module =  -->
       </ag>                            Force close module 'Bar'  
       <!-- here, 'Foo' current module  -->
@@ -484,21 +484,21 @@ class Module extends AbstractModule implements RefreshModuleInterface , CloseMod
     public function onRefresh(array $params)
     {
         // RefreshModuleInterface
-        // <ag refresh='on'></ag>
+        // <ag Refresh='on'></ag>
     }
     public function onClose()
     {
         // CloseModuleInterface
-        // <ag close='on'></ag> or post-process after parse
+        // <ag Close='on'></ag> or post-process after parse
     }
     public function pull_bar(array $params)
     {
-        // <ag pull='bar'>
+        // <ag Pull='bar'>
         return array();
     }
     public function loop_baz(array $params)
     {
-        // <ag loop='bar'>
+        // <ag Loop='bar'>
         return array (array());
     }
 }
@@ -531,13 +531,13 @@ Same as next.`\Tagent\Agent::self()->log('key','modulename',true,'modulename');`
 
 ex.  
 
-    <ag module='Foo'>
-      <ag pull='bar'>{@baz}</ag>  
+    <ag Module='Foo'>
+      <ag Pull='bar'>{@baz}</ag>  
     </ag>
 
 same 
 
-    <ag module='Foo' pull='bar'>{@baz}</ag>
+    <ag Module='Foo' Pull='bar'>{@baz}</ag>
 
 
 First ,  seach method `function pull_bar()` in module object \Module_Foo\Module.  
@@ -569,7 +569,7 @@ return example. return array['apple']='red'; ,set pull variable  {@apple}
 
 ###loop
 
-`<ag module='Foo' loop='baz'></ag>`
+`<ag Module='Foo' Loop='baz'></ag>`
 
 First , seach `function loop_baz()` in module object \Module_Foo\Module.  
 Second , search `class \Module_Foo\Loops\baz`  
@@ -605,7 +605,7 @@ $params are non-reserved attributes.
 
 >template
   
-    <ul><ag loop='baz'><li>{@LOOPKEY}-{@color}</li></ag></ul>
+    <ul><ag loop='baz'><li>{@LoopKEY}-{@color}</li></ag></ul>
 
 >output
 
@@ -619,7 +619,7 @@ $params are non-reserved attributes.
 
 >template
   
-    <ul><ag loop='baz'><li>{@LOOPKEY}-{@color}</li></ag></ul>
+    <ul><ag loop='baz'><li>{@LoopKEY}-{@color}</li></ag></ul>
 
 >output
 

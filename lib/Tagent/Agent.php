@@ -69,7 +69,7 @@ class Agent
     protected $loglevel = array(
                                 E_ERROR   => 'ERROR',   // 1
                                 E_WARNING => 'WARNING', // 2
-                                E_PARSE   => 'PARSE',   // 4
+                                E_PARSE   => 'Parse',   // 4
                                 E_NOTICE  => 'NOTICE'   // 8
                                );
     // init config   ------------------------------------------------
@@ -594,7 +594,7 @@ class Agent
     {
         // first, search module method
         $md = $this->getModule($module);
-        $methodname = $kind."_".$name;
+        $methodname = $kind.'_'.$name;
         if (is_object($md) && method_exists($md, $methodname)) {
             $this->log(E_NOTICE, 'Call Module_'.$module.'->'.$methodname, true, $module);
             return $md->$methodname($params);
@@ -823,18 +823,18 @@ class Agent
             $attrs = new Attribute($attr, $resource);
 
             // debug
-            if (isset($attrs->reserved['DEBUG'])) {
-                $this->debug(Utility::boolStr($attrs->reserved['DEBUG']));
+            if (isset($attrs->reserved['Debug'])) {
+                $this->debug(Utility::boolStr($attrs->reserved['Debug']));
             }
             // header
-            if (isset($attrs->reserved["HEADER"])) {
-                $header = HttpHeader::header($attrs->reserved["HEADER"]);
+            if (isset($attrs->reserved['Header'])) {
+                $header = HttpHeader::header($attrs->reserved['Header']);
                 $this->log(E_NOTICE,"header({$header})",true,'AGENT');
                 header($header);
             }
             // store
-            if (isset($attrs->reserved["STORE"])) {
-                $store = $attrs->reserved["STORE"];
+            if (isset($attrs->reserved['Store'])) {
+                $store = $attrs->reserved['Store'];
                 $buffer = $this->createBuffer($store);
                 $this->log(E_NOTICE,"Store: {$store}", true, $resource->module);
             } else {
@@ -843,25 +843,25 @@ class Agent
             // resource 
             $inResource = new ParseResource($buffer);
             //module control
-            if (isset($attrs->reserved["MODULE"])) {
-                $module = $inResource->module = $attrs->reserved["MODULE"];
+            if (isset($attrs->reserved['Module'])) {
+                $module = $inResource->module = $attrs->reserved['Module'];
                 $this->openModule($module, $attrs->params);
             } else {
                 $module = $inResource->module = $resource->module;
             }
             // reopen 
-            if (Utility::boolStr($attrs->reserved["REOPEN"])) {
+            if (Utility::boolStr($attrs->reserved['Reopen'])) {
                 $this->reopenModule($module, $attrs->params);
             }
             // close
-            $forceClose = Utility::boolStr($attrs->reserved['CLOSE'], false);
+            $forceClose = Utility::boolStr($attrs->reserved['Close'], false);
             // refresh
-            if (Utility::boolStr($attrs->reserved['REFRESH'], false)) {
+            if (Utility::boolStr($attrs->reserved['Refresh'], false)) {
                 $this->refreshModule($module, $attrs->params);
             }
             // pull vars
-            if (isset($attrs->reserved["PULL"])) {
-                $inResource->pullVars = $this->getPull($attrs->reserved["PULL"], $module, $attrs->params);
+            if (isset($attrs->reserved['Pull'])) {
+                $inResource->pullVars = $this->getPull($attrs->reserved['Pull'], $module, $attrs->params);
             } else {
                 $inResource->pullVars = $resource->pullVars;
             }
@@ -870,45 +870,45 @@ class Agent
                 $inResource->pullVars[$key] = $value;
             }
             // loop vars
-            $inLoopVarsList = (isset($attrs->reserved["LOOP"]))
-                            ? $this->getLoop($attrs->reserved["LOOP"], $module, $attrs->params)
+            $inLoopVarsList = (isset($attrs->reserved['Loop']))
+                            ? $this->getLoop($attrs->reserved['Loop'], $module, $attrs->params)
                             : array('_NOLOOP_'=>$resource->loopVars);
             // template
-            if (isset($attrs->reserved['TEMPLATE'])) {
-                if ( ($content = $this->getTemplate($attrs->reserved['TEMPLATE'], $module))!==false) {
+            if (isset($attrs->reserved['Template'])) {
+                if ( ($content = $this->getTemplate($attrs->reserved['Template'], $module))!==false) {
                     $inTag = $content; // replace inTag to template
                 }
             }
             // read
-            if (isset($attrs->reserved['READ'])) {
-                if ( ($content = $this->readFile($attrs->reserved['READ'], $module))!==false) {
+            if (isset($attrs->reserved['Read'])) {
+                if ( ($content = $this->readFile($attrs->reserved['Read'], $module))!==false) {
                     $inTag = $content; // replace inTag to file content.
                 }
             }
             // restore
-            if (isset($attrs->reserved['RESTORE'])) {
-                $restore = $attrs->reserved['RESTORE'];
+            if (isset($attrs->reserved['Restore'])) {
+                $restore = $attrs->reserved['Restore'];
                 if (! is_null($buffer = $this->getBuffer($restore))) {
                     $inTag = (string) $buffer;
-                    $attrs->reserved['PARSE'] = false;
+                    $attrs->reserved['Parse'] = false;
                     $this->log(E_NOTICE,"Restore: {$restore}", true, $resource->module);
                 } else {
                     $this->log(E_WARNING,"Restore: {$restore} Not Found Buffer", true, $resource->module);
                 }
             }
             // trim
-            if (Utility::boolStr($attrs->reserved['TRIM'], false)) {
+            if (Utility::boolStr($attrs->reserved['Trim'], false)) {
                 preg_match('/^\s*/', $inTag, $trimMatch);
                 $trimLineTag += substr_count($trimMatch[0],"\n");
                 $inTag = preg_replace('/(^\s*|\s*$)/', '', $inTag);
             }
             // check
-            if (Utility::boolStr($attrs->reserved['CHECK'], false)) {
+            if (Utility::boolStr($attrs->reserved['Check'], false)) {
                 $this->checkResourceLog($inResource, $inLoopVarsList);
             }
 
             // output parse switch
-            if (Utility::boolStr($attrs->reserved['PARSE'], true) ) {
+            if (Utility::boolStr($attrs->reserved['Parse'], true) ) {
                 // parse = yes
                 foreach($inLoopVarsList as $key => $inResource->loopVars) {
                     $this->line = $beforeLine + $trimLineTag; 
@@ -919,7 +919,7 @@ class Agent
             } else {
                 // parse = no
                 $inResource->buffer($inTag);
-                if (! isset($attrs->reserved['RESTORE'])) {
+                if (! isset($attrs->reserved['Restore'])) {
                     $this->log(E_NOTICE,'Parse: No', true, $resource->module);
                 }
             }
