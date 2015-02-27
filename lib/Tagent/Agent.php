@@ -804,7 +804,7 @@ class Agent
         $sourceLine = $this->line + substr_count($source, "\n");
 
         $tag = $this->getConfig("agent_tag"); // default ag
-        $pattern = "/<".$tag."\s+((?:\"[^\"]*\"|'[^']*'|[^'\">])*?)\s*>((?:(?>[^<]+)|<(?!(".$tag."|\/".$tag.")(>|\s))|(?R))*)<\/".$tag.">/is";
+        $pattern = "/<".$tag."\s*((?:\"[^\"]*\"|'[^']*'|[^'\">])*?)\s*>((?:(?>[^<]+)|<(?!(".$tag."|\/".$tag.")(>|\s))|(?R))*)<\/".$tag.">/is";
         // <tag> search
         while (preg_match($pattern, $source, $matches, PREG_OFFSET_CAPTURE)) {
             $match = $matches[0][0]; // <tag></tag>
