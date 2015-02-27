@@ -565,7 +565,7 @@ class Agent
      */
     public function getPull($pull, $module, $params)
     {
-        return $this->callGetVariables('pull', $pull, $module, $params, array());
+        return $this->callGetVariables('Pull', $pull, $module, $params, array());
     }
     // loop --------------------------------------------------------------------
     /**
@@ -577,7 +577,7 @@ class Agent
      */
     public function getLoop($loop, $module, $params)
     {
-        return $this->callGetVariables('loop', $loop, $module, $params, array(array()));
+        return $this->callGetVariables('Loop', $loop, $module, $params, array(array()));
     }
     // call --------------------------------------------------------------------
     /**
@@ -592,30 +592,52 @@ class Agent
      */
     protected function callGetVariables($kind, $name, $module, $params, $default)
     {
-        // first, search module method
         $md = $this->getModule($module);
-        $methodname = $kind.'_'.$name;
-        if (is_object($md) && method_exists($md, $methodname)) {
-            $this->log(E_NOTICE, 'Call Module_'.$module.'->'.$methodname, true, $module);
-            return $md->$methodname($params);
+        $methods[] = strtolower($kind).$name;
+        $methods[] = strtolower($kind).'_'.strtolower($name);
+        // First, search module method
+        if (is_object($md)) {
+            foreach($methods as $method){
+                if (is_callable(array($md, $method))) {
+                    $this->log(E_NOTICE, "Call Module_{$module}\\Module->{$method}()", true, $module);
+                    return $md->$method($params);
+                }
+            }
         }
-        // second, search method class   \Module_module\Methods or Loops\name
+        // Second, search pull/loop class   \Module_module\Methods or Loops\name
         $classname = $this->getModuleNamespace($module)."\\".ucfirst($kind)."s\\".$name;
+
         if (class_exists($classname)) {
-            $instance = new $classname($params);
-            $this->log(E_NOTICE, "Create {$kind} object: {$classname} search:{$methodname}", true, $module);
-            if (method_exists($instance, $methodname)) {
-                $this->log(E_NOTICE, 'Call '.$classname.'->'.$methodname.'()', true, $module);
-                return $instance->$methodname($params);
+            $rc = new \ReflectionClass($classname);
+            foreach($methods as $method) {
+                if (is_callable(array($classname, $method))) {
+                    $rm = new \ReflectionMethod($classname, $method);
+                    if ($rm->isStatic()) {
+                        $this->log(E_NOTICE, "{$kind} Call static method. {$classname}::{$method}()", true, $module);
+                        return $classname::$method($params);
+
+                    } elseif ($rc->isInstantiable()) {
+                            $instance = new $classname($params);
+                            $this->log(E_NOTICE, "{$kind} Create instance and call. {$classname}->{$method}()", true, $module);
+                            return $instance->$method($params);
+                    } else {
+                        $this->log(E_WARNING, "{$kind} Not callable method exist. {$classname}::{$method}()", true, $module);
+                    }
+                    unset($rm);
+                }
             }
-            if (is_callable($instance)) {
-                $this->log(E_NOTICE, 'Callable '.$kind.' '.$classname.'()', true, $module);
-                return $instance($params);
+            if ($rc->isInstantiable() && $rc->hasMethod('__invoke')) {
+                $rm = $rc->getMethod('__invoke');
+                if ($rm->isPublic()) {
+                    $this->log(E_NOTICE, "{$kind} Create invokable instance and call.  {$classname}()", true, $module);
+                    $instance = new $classname($params);
+                    return $instance($params);
+                }
             }
-            $this->log(E_WARNING,$kind.': '.$classname.' Not found '.$methodname.',and Not Callable.', true, $module);
+            $this->log(E_ERROR,"{$kind} Not found method. {$classname}::{$methods[0]}() or {$methods[1]}()", true, $module);
             return $default;
         }
-        $this->log(E_WARNING,'Not Found call ('.$module.'->'.$methodname.') and '.$classname, true, $module);
+        $this->log(E_ERROR,"{$kind} Not Found class {$module} or {$classname}::{$methods[0]} or {$methods[1]}", true, $module);
         return $default;
     }
     /**
@@ -958,7 +980,7 @@ class Agent
     // Error for debug -------------------------------------------
     /**
      * return log report
-     * @return string|fale
+     * @return mixed string|fale
      */
     public function getLogReport()
     {
