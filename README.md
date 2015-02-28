@@ -79,8 +79,6 @@ It is possible to add user-defined filters.
 
 #####Todo now
 
-* add sprintf() filter  {@var|f'%05d'|h}
-
 * shape up / cost tune Agent::fetch()
 
 * config method name default case. (switch camel or snake)  
