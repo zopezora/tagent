@@ -53,6 +53,26 @@ class FilterManager
                 return (isset($str)) ? base64_encode($str) : null;
             }
         );
+        // nl2br
+        $this->filters[] = new Filter('nl2br','br',
+            function($str, $name) {
+                return (isset($str)) ? nl2br($str) : null;
+            }
+        );
+        // space
+        $this->filters[] = new Filter('nbsp','',
+            function($str, $name) {
+                return (isset($str)) ? str_replace(' ', '&nbsp;', $str) : null;
+            }
+        );
+        // printf
+        $this->filters[] = new Filter('/pf'.Utility::IN_QUOTE_PATTERN.'/', '',
+            function($str, $name) {
+                preg_match('/^pf('.Utility::IN_QUOTE_PATTERN.')$/', $name, $match);
+                $format = Utility::removeQuote($match[1]);
+                return (isset($str)) ? sprintf($format, $str) : null;
+            }
+        );
         // init pattern
         $this->setPattern();
     }
