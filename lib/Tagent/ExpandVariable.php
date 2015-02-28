@@ -41,6 +41,11 @@ class ExpandVariable
 </style>
 STYLE;
 
+    /**
+     * selector of expand function
+     * @param  mixed $var 
+     * @return string
+     */
     public static function expand($var)
     {
         switch(gettype($var)) {
@@ -66,6 +71,11 @@ STYLE;
         }
         return $output;
     }
+    /**
+     * array expand to html table
+     * @param  array $var 
+     * @return string
+     */
     public static function expandArray($var)
     {
         $output = "<table class='".self::CSS_CLASS."'>\n";
@@ -86,6 +96,11 @@ STYLE;
         $output .= "</table>\n";
         return $output;
     }
+    /**
+     * object expand to html table
+     * @param  object $var 
+     * @return string
+     */
     public static function expandObject($var)
     {
         $output = "<table class='".self::CSS_CLASS."'>\n";
@@ -124,6 +139,11 @@ STYLE;
         $output .= "</table>\n";
         return $output;
     }
+    /**
+     * resource expand to html table
+     * @param  resource $var 
+     * @return string
+     */
     public static function expandResource($var)
     {
         $output = "<table class='".self::CSS_CLASS."'>\n";
