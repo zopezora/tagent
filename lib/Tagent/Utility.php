@@ -8,6 +8,8 @@ namespace Tagent;
 
 class Utility
 {
+    const QUOTE_PATTERN = "/^(?|\"((?:\\\\\"|[^\"])*)\"|'((?:\\\\'|[^'])*)')$/";
+
     // ---- Utility -------------------------------------------------
     /**
      * remove Quote ' ' or " "
@@ -16,9 +18,7 @@ class Utility
      */
     public static function removeQuote($str)
     {
-//      $pattern = "/^(?|\"([^\"]*)\"|'([^']*)')$/";
-        $pattern = "/^(?|\"((?:\\\\\"|[^\"])*)\"|'((?:\\\\'|[^'])*)')$/";
-        if (preg_match( $pattern, $str, $matches))
+        if (preg_match(self::QUOTE_PATTERN, $str, $matches))
         {
             return self::unescapeQuote($matches[1]);
         }
