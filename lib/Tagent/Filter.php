@@ -36,14 +36,33 @@ class Filter
         $this->short    = $short;
         $this->callable = $callable;
 
-        if (($name = Utility::removeQuote($this->name))===false) {
+        if (($name = $this->removeDelimter($this->name))===false) {
             $name = preg_quote($this->name);
         }
-        if (($short = Utility::removeQuote($this->short))===false) {
+        if (($short = $this->removeDelimter($this->short))===false) {
             $short = preg_quote($this->short);
         }
         $this->pattern = ($short=='') ? array($name) : array($name, $short) ;
     }
+
+    /**
+     * remove regular expression delimiter
+     * @param string $str 
+     * @return string
+     */
+    public function removeDelimter($str)
+    {
+        if (preg_match('/^\/(.*)\/$/', $str, $match)) {
+            return $match[1];
+        }
+        return false;
+    }
+    /**
+     * filter
+     * @param mixed $str 
+     * @param string $filterName 
+     * @return mixed
+     */
     public function filter($str, $filterName)
     {
         $callable = $this->callable;
