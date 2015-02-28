@@ -1,3 +1,5 @@
+#Tagent
+
 
 ####Tag
 
@@ -9,7 +11,7 @@
 #####Reserved attributes
 `Module`,`Pull`,`Loop`,`Parse`,`Close`,`Refresh`,`Reopen`,`Template`,`Check`,`Debug`,`Header`,`Read`,`Trim`,`Store`,`Restore`  
 
-Attribute names are case-sensitive.
+Attributes name are case-sensitive.
 The first letter of reserved attribute name is upper-case.
 
 (Recommend) The first letter of the user attributes name are lower-case so as not to name collision.  
@@ -30,45 +32,49 @@ The user attributes are used as a properties array $params  (see `Module`, `Pull
 <ag Module='Foo' bar="It's cool"></ag>   // non-escape single quotation inside double-quotation
 
 <!-- assign value to variable 'foo' -->
-<ag [foo]='bar'>{@foo}</ag>   // literal    
+<ag [foo]='bar'>{@foo}</ag>   // literal   temporary use.  
 <ag [foo]={@bar}>{@foo}</ag>  // variable  Typical use is bridge to inside tag from outside tag scope.  
 ```
-
-
-
-
-
 
 ####Variable
 
 ```text
-{@scope:name|format}
+{@scope:name|filter}
    ex.{@foo}, {@m:foo}, {@foo|r},  {@global:foo|json}
-      {@foo|url|html} Specifies the multiple formats. Apply from left to right.
+      {@foo|url|html} Specifies the multiple filters. Apply from left to right.
 ```
 
-* scope(option)  
+#####Scope(option)  
 ```
-                  pull scope value is top priority.  
-`loop`   or `l`   loop scope  
-`module` or `m`   current module scope  
-`global` or `g`   global module scope  
+(-- nothing --)   Pull scope is top priority.  
+`loop`   or `l`   Loop scope  
+`module` or `m`   Current module scope  
+`global` or `g`   Global module scope  
 ```
 case-insensitive  
-By default, scanning in the following order  
+By default scanning in the following order  
 `pull`, `loop`, `module`, `global`  
 
-* name  
-/\w+/  
-a to z, A to Z. and '_' under bar  
+#####Variable Name  
 
-* format(option)  
+```text
+/\w+/...  /[a-zA-Z0-9_]+/  
+```
+case-sensitive
+
+
+#####Filter(option)  
+
+```text
 `html` or `h`  (default)  htmlspecialchars()  
 `raw` or `r`  
 `url` or `u`  urlencode()  
 `json` or `j`  json_encode()  
 `base64` or `b` base64_encode()
-case-insensitive
+```
+case-sensitive
+
+it's posible to add user defined filter.  
 
 ###Other exmaples
 
