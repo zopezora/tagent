@@ -918,7 +918,6 @@ class Agent
                 $restore = $attrs->reserved['Restore'];
                 if (! is_null($buffer = $this->getBuffer($restore))) {
                     $inTag = (string) $buffer;
-                    $attrs->reserved['Parse'] = false;
                     $this->log(E_NOTICE,"Restore: {$restore}", true, $resource->module);
                 } else {
                     $this->log(E_WARNING,"Restore: {$restore} Not Found Buffer", true, $resource->module);
@@ -947,9 +946,7 @@ class Agent
             } else {
                 // parse = no
                 $inResource->buffer($inTag);
-                if (! isset($attrs->reserved['Restore'])) {
-                    $this->log(E_NOTICE,'Parse: No', true, $resource->module);
-                }
+                $this->log(E_NOTICE,'Parse: No', true, $resource->module);
             }
             $this->line = $matchLine;
 
