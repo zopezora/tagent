@@ -7,7 +7,6 @@ namespace Tagent;
 
 class ParseResource {
     // const pattern
-    const OUTPUT_FORMATS  = 'h|r|u|j|b|html|raw|url|json|base64';
     const VARIABLE_SCOPES = 'm|l|g|module|loop|global';
     /**
      * @var string
@@ -38,7 +37,6 @@ class ParseResource {
     {
         $this->buffer = $buffer;
     }
-
     /**
      * buffer
      * @param  string $str 
@@ -49,7 +47,7 @@ class ParseResource {
         return $this->buffer->buffer($str);
     }
     /**
-     * variable fetch .  search {@scope:name|format} , deployment to the value
+     * variable fetch .  search {@scope:name|filter} , deployment to the value
      * @param  string $source
      * @param  bool   $return  .true...return string, false...buffering   
      * @return string|void
@@ -57,8 +55,10 @@ class ParseResource {
     public function varFetch($source, $return = false)
     {
         $agent = Agent::self();
+        $filterPattern = $agent->filterManager->pattern;
+
         $output = '';
-        $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())((?>\w+))(?|((?:\[(?:(?>[^\[\]]+)|(?R))\])+)|())(?|((?:\|(?:".self::OUTPUT_FORMATS."))+)|())}/i";
+        $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())((?>\w+))(?|((?:\[(?:(?>[^\[\]]+)|(?R))\])+)|())(?|((?:\|(?:".$filterPattern."))+)|())}/i";
 
         while (preg_match($pattern, $source, $matches, PREG_OFFSET_CAPTURE)) {
             $match = $matches[0][0];
@@ -69,8 +69,8 @@ class ParseResource {
             $key     = $matches[2][0];
             $index   = $matches[3][0];
 
-            $format = ($matches[4][0]) ? substr($matches[4][0], 1) : '';
-            $formats = explode('|', $format);
+            $filter = ($matches[4][0]) ? substr($matches[4][0], 1) : 'h';
+            $filters = explode('|', $filter);
 
             $key_array = array($key);
             if (preg_match_all("/\[((?:(?>[^\[\]]+)|(?R))*)\]/", $index, $index_matches)) {
@@ -115,9 +115,9 @@ class ParseResource {
                     break;
             }
             if (isset($var)) {
-                //format
-                foreach ($formats as $format){
-                    $var = $this->format($var, $format);
+                //filter
+                foreach ($filters as $filter){
+                    $var = $agent->filterManager->filter($var, $filter);
                 }
             } else {
                 $agent->log(E_PARSE,'Not Found Variable  '.$match, true, $this->module);
@@ -139,48 +139,6 @@ class ParseResource {
             $this->buffer($source);
             $agent->line += substr_count($source,"\n");
         }
-    }
-    /**
-     * convert format 
-     * @param  mixed  $source  string|array
-     * @param  string $format 
-     * @return string|false
-     */
-    public function format($source, $format = 'h')
-    {
-        $agent = Agent::self();
-        if ($source === false) {
-            return false;
-        }
-        if (is_object($source) && ! method_exists($source,'__toString')) {
-            $agent->log(E_PARSE,'Cannot convert from object ('.get_class($source).') to string ');
-            if ($agent->debug()) {
-                return "*Object*";
-            }
-            return false;
-        }
-        $format = ($format=="") ? "h" : strtolower($format)[0];
-        switch ($format) {
-            case 'h':
-                $output = htmlspecialchars((string) $source, ENT_QUOTES, 'UTF-8');
-                break;
-            case 'r':
-                $output = (string) $source;
-                break;
-            case 'u':
-                $output = urlencode((string) $source);
-                break;
-            case 'j':
-                $output = json_encode($source);
-                break;
-            case 'b':
-                $output = base64_encode($source);
-                break;
-            default:
-                $agent->log(E_WARNING, "Unvalid format (".$format.")");
-                $this->format($source, 'h'); // retry
-        }
-        return $output;
     }
 
 }

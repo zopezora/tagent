@@ -21,7 +21,6 @@ class Agent
     const LINE_OFFSET      = 0;
     const TEMPLATE_EXT     = ".tpl";
     const LOG_REPORTING    = E_ALL;
-
     /**
      * @static
      * @var object  static for singleton
@@ -39,6 +38,11 @@ class Agent
      * @var array    ['modulename']['instance']/['objects']/['variables'] 
      */
     protected $modules = array();
+
+    /**
+     * @var object filter manager object
+     */
+    public $filterManager = null;
     /**
      * @var string current work directory for callback out buffer 
      */
@@ -143,6 +147,8 @@ class Agent
             ob_implicit_flush(false);
             register_shutdown_function( array($this,'shutdown'));
         }
+        // filter manager
+        $this->filterManager = new FilterManager();
     }
     /**
      * protected for singleton
