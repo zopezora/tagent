@@ -11,10 +11,13 @@ PHP template parser.
 
 * Tiny PHP Freamework for PHP non-full-stack site.
 * View-driven Model. Just in time.
-* Tag style template parser. Compatibility with web design skill and web tools.
-* Module control for versatility.
+* Tag style templates. Compatibility with web design skill and web tools.
+* Module control for reusability.
 * Object Locator for sharing between modules.
-* Embedding template by store and restore to the buffer
+* Embedded external template.  
+* Template inheritance using buffer.
+* User defined filters.  
+* Html log reporting for debug  
 
 ##Template  
 
@@ -50,26 +53,33 @@ PHP template parser.
 #####Reserved attributes
 
 `Module`,`Pull`,`Loop`,`Parse`,`Close`,`Refresh`,`Reopen`,`Template`,`Check`,`Debug`,`Header`,`Read`,`Trim`,`Store`,`Restore`  
+* case-sensitive.  First letter of reserved attribute are upper-case.  
+
 
 ####Variable
 
 ```text
-{@scope:variable|format}
+{@scope:variable|filter}
 ```
 
-scope:  `loop`/`l` , `module`/`m` , `global`/`g`  
+(optional) scope:  `loop`/`l` , `module`/`m` , `global`/`g`  
+*If not specified, it is scanned in the order of the pull loop module global
 
-format `html`/`h` , `raw`/`r` ,`url`/`u` , `json`/`j` ,`base64`/`b`  
+(optional) filter `html`/`h` , `raw`/`r` ,`url`/`u` , `json`/`j` ,`base64`/`b`  
+*If not specified, html filter is applied
+
+It is possible to add user-defined filters.  
+
+- - - - - - -
+###Document
+
+[Development memo](docs/Document.md)
 
 - - - - - - -
 
 #####Todo now
 
-* User define format injection. callable example clouser.  change name format to filter/modificator/processor?  
-about:   $agent->setFormat('full-name', 'short', function($str){ return $str;});
-
-* add string type format use sprintf()
-about: {@var|'%05d'|h}
+* add sprintf() filter  {@var|f'%05d'|h}
 
 * shape up / cost tune Agent::fetch()
 
