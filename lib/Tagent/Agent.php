@@ -38,11 +38,14 @@ class Agent
      * @var array    ['modulename']['instance']/['objects']/['variables'] 
      */
     protected $modules = array();
-
     /**
      * @var object filter manager object
      */
     public $filterManager = null;
+    /**
+     * @var object HttpHeaderManager object
+     */
+    public $httpHeaderManager = null;
     /**
      * @var string current work directory for callback out buffer 
      */
@@ -149,6 +152,8 @@ class Agent
         }
         // filter manager
         $this->filterManager = new FilterManager();
+        // HeaderManager
+        $this->httpHeaderManager = new HttpHeaderManager();
     }
     /**
      * protected for singleton
@@ -856,7 +861,7 @@ class Agent
             }
             // header
             if (isset($attrs->reserved['Header'])) {
-                $header = HttpHeader::header($attrs->reserved['Header']);
+                $header = $this->httpHeaderManager->header($attrs->reserved['Header']);
                 $this->log(E_NOTICE,"header({$header})",true,'AGENT');
                 header($header);
             }
@@ -965,20 +970,21 @@ class Agent
         // remaining non Tag-match string 
         if ($flagGlobal) {
             $resource->buffer($source);
-        } else {
-            $resource->varFetch($source);
-        }
-        $this->line = $sourceLine;
+            $this->line = $sourceLine;
 
         // post-process global fetch
-        if ($flagGlobal) {
             $this->log(E_NOTICE,'---------- POST PROCESS [from here]----------',true,$resource->module);
             // all module close sequence
             $modules = array_reverse($this->modules);
             $this->closeAllModule(array_keys($modules));
             $this->line = 0;
             return $resource->buffer;
+
+        } else {
+            $resource->varFetch($source);
+            $this->line = $sourceLine;
         }
+
     }
     // Error for debug -------------------------------------------
     /**

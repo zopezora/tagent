@@ -8,29 +8,16 @@ namespace Tagent;
 
 class HttpHeader
 {
-    // @todo header short
-    const HEADER_TEXT_SHORT        = 'plain|html|css';
-    const HEADER_APPLICATION_SHORT = 'javascript|json|xml';
-    const HEADER_IMAGE_SHORT       = 'jpeg|gif|png';
-    /**
-     * @var string charset
-     */
-    public static $charset = 'utf-8';
-    /**
-     * header
-     * @param type $header 
-     * @return type
-     */
-    public static function header($header)
+    public $name;
+
+    public $header;
+
+    public $charser = false;
+
+    public function __construct($name, $header, $charset = false)
     {
-        // Content-Type: text/
-        if (preg_match('/^('.self::HEADER_TEXT_SHORT.')$/i', $header, $match)) {
-            return 'Content-Type: text/'.$match[0].'; charset='.self::$charset;
-        } elseif (preg_match('/^('.self::HEADER_APPLICATION_SHORT.')$/i', $header, $match)) {
-            return 'Content-Type: application/'.$match[0].'; charset='.self::$charset;
-        } elseif (preg_match('/^('.self::HEADER_IMAGE_SHORT.')$/i', $header, $match)) {
-            return 'Content-Type: image/'.$match[0];
-        }
-        return $header;
+        $this->name    = $name;
+        $this->header  = $header;
+        $this->charset = $charset;
     }
 }
