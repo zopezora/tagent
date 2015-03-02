@@ -35,11 +35,12 @@ class HttpHeaderManager
             $this->addHeader(new HttpHeader($name, $header, false));
         }
         // image
-        $names = array('jpeg','gif','png','svg');
+        $names = array('jpeg','gif','png');
         foreach($names as $name) {
             $header = 'Content-Type: image/'.$name;
             $this->addHeader(new HttpHeader($name, $header, false));
         }
+        $this->addHeader(new HttpHeader('svg', 'Content-Type: image/svg+xml', false));
     }
     /**
      *  add header
@@ -71,5 +72,8 @@ class HttpHeaderManager
         }
         return $name;
     }
-
+    public function setCharset($charset)
+    {
+        $this->charset = $charset;
+    }
 }
