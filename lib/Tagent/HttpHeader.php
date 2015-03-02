@@ -12,8 +12,15 @@ class HttpHeader
 
     public $header;
 
-    public $charser = false;
+    public $charset = false;
 
+    /**
+     * set property
+     * @param string $name 
+     * @param string $header 
+     * @param bool $charset 
+     * @return void
+     */
     public function __construct($name, $header, $charset = false)
     {
         $this->name    = $name;
