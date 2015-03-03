@@ -73,6 +73,30 @@ class FilterManager
                 return (isset($str)) ? sprintf($format, $str) : null;
             }
         );
+        // basic arithmetic operations
+        $this->filters[] = new Filter('/(?:\+|-|\*|\/|%|\*\*|\^)(?:\d+)(?:\.\d+|)/', '',
+            function($str, $name) {
+                preg_match('/(\+|-|\*|\/|%|\*\*|\^)((?:\d+)(?:\.\d+|))/', $name, $match);
+                $op    = $match[1];
+                $param = $match[2];
+                switch ($op) {
+                    case "+":
+                        return $str + $param;
+                    case "-":
+                        return $str - $param;
+                    case "*":
+                        return $str * $param;
+                    case "/":
+                        return $str / $param;
+                    case "%":
+                        return $str % $param;
+                    case "**":
+                    case "^":
+                        return pow($str, $param);
+                }
+                return $str;
+            }
+        );
         // init pattern
         $this->setPattern();
     }
