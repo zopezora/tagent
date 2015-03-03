@@ -40,7 +40,7 @@ class HttpHeaderManager
             $header = 'Content-Type: image/'.$name;
             $this->addHeader(new HttpHeader($name, $header, false));
         }
-        $this->addHeader(new HttpHeader('svg', 'Content-Type: image/svg+xml', false));
+        $this->addHeader(new HttpHeader('svg', 'Content-Type: image/svg+xml', true));
     }
     /**
      *  add header
