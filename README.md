@@ -25,13 +25,22 @@ PHP template parser.
 
 ```html
 <html>
+  <head>
+    <ag>
+      <title>{@title}</title>
+    </ag>
+    <ag module='Foo'>
+      <script>
+        var obj = parseJSON('{@obj|json}');
+      </script>
+    </ag>
+  </head>
   <body>
     <h1><ag>{@title}</ag></h1>
-    <ag Module='Foo'>
-      <p>{@bar|r}</p>
+    <ag Module='Bar'>
       <ul>
         <ag Loop='Baz'>
-          <li>{@id}:{@l:name}</li>
+        <li>{@l:id|pf'%05d'}:{@l:name|h}</li>
         </ag>
       </ul>
     </ag>
