@@ -8,10 +8,17 @@ namespace Tagent;
 
 class HttpHeader
 {
+    /**
+     * @var string
+     */
     public $name;
-
+    /**
+     * @var string
+     */
     public $header;
-
+    /**
+     * @var string
+     */
     public $charset = false;
 
     /**
