@@ -21,6 +21,7 @@ class Agent
     const LINE_OFFSET      = 0;
     const TEMPLATE_EXT     = ".tpl";
     const LOG_REPORTING    = E_ALL;
+    const CHARSET          = 'utf-8';
     /**
      * @static
      * @var object  static for singleton
@@ -120,6 +121,7 @@ class Agent
     {
         // set config default 
         $this->configs = array (
+            "charset"           => self::CHARSET,
             "agent_tag"         => self::AGENT_TAG,
             "agent_directories" => array (self::AGENT_DIRECTORY),
             "debug"             => self::DEBUG,
@@ -153,7 +155,7 @@ class Agent
         // filter manager
         $this->filterManager = new FilterManager();
         // HeaderManager
-        $this->httpHeaderManager = new HttpHeaderManager();
+        $this->httpHeaderManager = new HttpHeaderManager($this->configs['charset']);
     }
     /**
      * protected for singleton
@@ -387,14 +389,13 @@ class Agent
                 return false;
             }
             try {
-                $dbh = new \PDO($dsn, $user, $password, $options);
+                $this->db[$name] = new \PDO($dsn, $user, $password, $options);
             } catch (\PDOException $e) {
                 $this->log(E_ERROR,$e->getMessage(), true, 'AGENT_DB', 0);
                 return $this->db[$name] = false;
             }
-            $this->db[$name] = $dbh;
             $this->log(E_NOTICE,"Connect DB '{$name}': dsn={$dsn}", true, 'AGENT_DB', 0);
-            return $this->db[$name] = $dbh;
+            return $this->db[$name];
         } else {
             $this->log(E_ERROR,"Not found DB config {$name}", true, 'AGENT_DB', 0);
             return $this->db[$name] = false;
@@ -604,7 +605,7 @@ class Agent
     protected function callGetVariables($kind, $name, $module, $params, $default)
     {
         $md = $this->getModule($module);
-        $methods[] = strtolower($kind).$name;
+        $methods[] = strtolower($kind).str_replace('_', '', $name);
         $methods[] = strtolower($kind).'_'.strtolower($name);
         // First, search module method
         if (is_object($md)) {
