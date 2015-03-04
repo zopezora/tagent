@@ -66,11 +66,13 @@ case-sensitive
 #####Filter(option)  
 
 ```text
-`html` or `h`  (default)  htmlspecialchars()  
-`raw` or `r`  
-`url` or `u`  urlencode()  
-`json` or `j`  json_encode()  
-`base64` or `b` base64_encode()
+html   or h     (default)  htmlspecialchars( ENT_QUOTE,utf-8)  
+raw    or r         
+url    or u      urlencode()  
+json   or j      json_encode()  
+base64 or b      base64_encode()
+pf'format'       printf formatting  ex |pf'%05d'  
++,-d,d,/,%,^,**  numeric operation  ex |+1|-2|*3|/4|%5|^6|**6   ^ or ** is  Exponentiation
 ```
 case-sensitive
 
@@ -510,7 +512,8 @@ Same as next.`\Tagent\Agent::self()->get('key','modulename');`
 Same as next.`\Tagent\Agent::self()->log('key','modulename',true,'modulename');`
 
 
-###Pull
+
+###Pull / Loop
 
 >example
 
@@ -518,26 +521,61 @@ Same as next.`\Tagent\Agent::self()->log('key','modulename',true,'modulename');`
     <ag Module='Foo'>
       <ag Pull='Bar'>{@baz}</ag>  
     </ag>
+
+    <ag Module='Foo'>
+      <ag Loop='Qux'>
+        <li>{@quux}</li>
+      </ag>  
+    </ag>
 ```
 
 >Same 
 
 ```html
     <ag Module='Foo' Pull='Bar'>{@baz}</ag>
+    <ag Module='Foo' Loop='Qux'>
+      <li>{@quux}</li>
+    </ag>
 ```
 
-#####Pull method name
+#####method name  [Pull/Loop]
 
 camelCase and snake-case both available.  
 
+    <ag Pull='Bar'></ag>
+
 ```
-function pullBar() {} // camelCase
+function pullBar(){}  // camelCase
 function pull_bar(){} // snake-case
 ```
 
-note : method name is case-insensitive in PHP.  but class name is case-sensitive.  
+    <ag Pull='sub_main'></ag>  //  '_' underscore  
 
-#####Priority order of serarch method  
+```
+function pullSubMain(){}      // camelCase
+function pull\_sub\_main(){}  // snake-case
+```
+
+note : method name is case-insensitive in PHP.  
+note : Tagent\ModuleLoader is compatible psr-0.  convert from '\_' to DIRECTORY\_SEPALATOR in class name.  
+
+
+#####Class file / name
+
+```
+config 'agent_directories = array('ag/');
+
+Pull='bar'  
+class file : `/ag/Module_Foo/Bar.php`  
+class name : `\Module_Foo\Pulls\Bar`  
+
+Pull='sub_main'  
+class file : `/ag/Module_Foo/Sub/Main.php`  
+class name : `\Module_Foo\Pulls\Sub_Main.php`  
+```
+
+#####Priority order of serarch method  [Pull/Loop]
+
 
 1. `Module_Foo\Module->pullBar($params)` instance method
 2. `Module_Foo\Module->pull_bar($params)` instance method
@@ -547,9 +585,8 @@ note : method name is case-insensitive in PHP.  but class name is case-sensitive
 6. `Module_Foo\Pulls\Bar->pull_bar($params)` instance call
 7. `Module_Foo\Pulls\Bar($params)` instance __invoke() call
 
-fix namespace and directory.
 
->Module_Foo\Module.php  instansable class method
+>Module_Foo\Module.php  Module class method
 
 ```php
 <?php
@@ -656,29 +693,6 @@ FOO-BAR
 
 `<ag Module='Foo' Loop='Baz'></ag>`  
 
-#####Loop method name
-
-camelCase and snake-case both available.  
-
-```
-function loopBar() {} // camelCase
-function loop_bar(){} // snake-case
-```
-
-note : method name is case-insensitive in PHP.  but class name is case-sensitive.  
-
-#####Priority order of serarch method  
-
-1. `Module_Foo\Module->loopBar($params)` instance method
-2. `Module_Foo\Module->loop_bar($params)` instance method
-3. `Module_Foo\Loops\Baz::pullBaz($params)` class static method
-4. `Module_Foo\Loops\Baz->pullBaz($params)` instance method
-5. `Module_Foo\Loops\Baz::pull_baz($params)` class static method
-6. `Module_Foo\Loops\Baz->pull_baz($params)` instance call
-7. `Module_Foo\Loops\Baz($params)` instance __invoke() call
-
-fix namespace and directory.
-
 >Module_Foo\Module.php  instansable class method
 
 ```php
@@ -766,15 +780,20 @@ namespace Module_Foo;
 class Module
 {
   public function loopBaz($params){
+    // return array
     return array(
         array('id'=>'001', 'name'=>'John'),
         array('id'=>'002', 'name'=>'Jane'),
         array('id'=>'003', 'name'=>'paul'),
       );
-    // or
-    $pdo = new \PDO($dsn, $user, $pass);   // see DB section,  $pdo = \Tagent\Agent::self()->db();
+    // pdo object
+    $pdo = new \PDO($dsn, $user, $pass); 
     return $pdo->query("select id,name from users"); // return PDOstatment object that is traversable
-    // object traversable, iterator  etc..  access by ->property, or if has ArrayAccess interface, by [property] 
+
+    // pdo object use agent::db()     see DB section
+    $agent = Agent::self();
+    $db = $agent->db();
+    return $db->query("select id,name from users"); 
   }
 }
 ?>
@@ -983,8 +1002,8 @@ Target namespace is \Module_\*\*\*
 1. Class \Module\_Foo\Module  
 require ag/Module\_Foo/Module.php  
 
-2. Class \Module\_Foo\Methods\bar  
-require ag/Module\_Foo/Methods/bar.php  
+2. Class \Module\_Foo\Pulls\bar  
+require ag/Module\_Foo/Pull/bar.php  
 
 3. Class \Module\_Foo\Classes\Common\_Baz  
 require ag/Module\_Foo/Classes/Common/Baz.php  
