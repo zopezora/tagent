@@ -15,13 +15,14 @@ class HttpHeaderManager
     /**
      * @var string charset
      */
-    public $charset = 'utf-8';
+    public $charset = '';
     /**
      * constructor
      * @return void
      */
-    public function __construct()
+    public function __construct($charset = 'utf-8')
     {
+        $this->charset = $charset;
         // text default
         $names = array('plain','html','css');
         foreach($names as $name) {

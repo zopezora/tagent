@@ -26,7 +26,9 @@ class FilterManager
         // html
         $this->filters[] = new Filter('html','h',
             function($str, $name) {
-                return (isset($str)) ? htmlspecialchars((string) $str, ENT_QUOTES, 'UTF-8') : null;
+                $agent = Agent::self();
+                $charset = $agent->getConfig('charset');
+                return (isset($str)) ? htmlspecialchars((string) $str, ENT_QUOTES, $charset) : null;
             }
         );
         // raw
@@ -65,10 +67,10 @@ class FilterManager
                 return (isset($str)) ? str_replace(' ', '&nbsp;', $str) : null;
             }
         );
-        // printf
-        $this->filters[] = new Filter('/pf'.Utility::IN_QUOTE_PATTERN.'/', '',
+        // format by printf
+        $this->filters[] = new Filter('/f'.Utility::IN_QUOTE_PATTERN.'/', '',
             function($str, $name) {
-                preg_match('/^pf('.Utility::IN_QUOTE_PATTERN.')$/', $name, $match);
+                preg_match('/^f('.Utility::IN_QUOTE_PATTERN.')$/', $name, $match);
                 $format = Utility::removeQuote($match[1]);
                 return (isset($str)) ? sprintf($format, $str) : null;
             }
