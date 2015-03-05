@@ -71,12 +71,12 @@ raw    or r
 url    or u      urlencode()  
 json   or j      json_encode()  
 base64 or b      base64_encode()
-pf'format'       printf formatting  ex |pf'%05d'  
+f'format'        printf formatting  ex |f'%05d'  
 +,-d,d,/,%,^,**  numeric operation  ex |+1|-2|*3|/4|%5|^6|**6   ^ or ** is  Exponentiation
 ```
 case-sensitive
 
-it's posible to add user defined filter.  
+it's posible to add user defined filters.  
 
 ###Other exmaples
 
@@ -114,7 +114,7 @@ $( document ).ready(function() {
 
 ```css
 /* <ag Header='css'></ag> 
-   <ag Module='Foo' Pull='Bar' border='1px solid #aaa'> */
+   <ag [border]='1px solid #aaa'> */
 div.bar {
   border : {@border};
 }
@@ -159,7 +159,7 @@ use composer
 
 [ag] directory name is default setting in config.php `'ag_directories'=>array('ag/')` multiple OK  
 
-###Fixed dir/file ename, class 
+###Fixed dir/file name, class 
 
 | Directory      | Filename   |Class                   | TAG attribute                           |
 |----------------|------------|------------------------|-----------------------------------------|
@@ -234,14 +234,10 @@ automatically preload bootstrap.php for file extension .tpl and .php(default)
 
 >.htaccess  
 
-    AddType application/x-httpd-php .tpl
     php_value auto_prepend_file "/path/to/bootstrap.php"
-  
-  
 
-*carefully. There are several risks*  
-
-.html .js .css and .php(default)  
+*I's easy, add type. but carefully. There are some risks*  
+.tpl .html .js .css and .php(default)  
 
 >.htaccess  
 
@@ -250,12 +246,14 @@ automatically preload bootstrap.php for file extension .tpl and .php(default)
 
 ###2.Require bootstrap
 
->targetfiles.php
+>target files.php
 
-    <?php require (dirname($_SERVER['DOCUMENT_ROOT']).'/bootstrap.php'); ?>
-    <!DOCTYPE html>
-    <!--- Omitted --->
-    </html>
+```php
+<?php require (dirname($_SERVER['DOCUMENT_ROOT']).'/bootstrap.php'); ?>
+<!DOCTYPE html>
+<!-- Omitted -->
+</html>
+```
 
 If you want to match the log line number,It may be set in the configuration.  
 
@@ -265,22 +263,9 @@ If you want to match the log line number,It may be set in the configuration.
     "line_offset"     => 1,      // for log reporting.  
 ```
 
-###3.Front-controller
+###3.Manualy render. use Front-controller etc.
 
-Front-controller is not included in the Tagent  
-
->index.php
-
-```php
-<?php
-chdir (__DIR__);
-require 'vendor/autoload.php';
-$agent = \Tagent\Agent::init( require 'path/to/config.php' );
-
-// ---  resolve $filename by your router ---
-
-$agent->fileDisplay($filename);
-```
+note: Front-controller is not included in the Tagent  
 
 >config.php  
 
@@ -288,18 +273,44 @@ $agent->fileDisplay($filename);
     "shutdown_display"   => false,
 ```
 
+>index.php
+
+```php
+<?php
+chdir (dirname($_SERVER['DOCUMENT_ROOT']));
+require 'vendor/autoload.php';
+$agent = \Tagent\Agent::init( require 'config.php' );
+
+/*  resolve $filename by your router  */
+
+$agent->fileDisplay($filename);
+```
+
+
 ##Config
+
+> config.php
+
+```php 
+<?php
+return array();
+```
+
+Empty array mean default config.  
+
+> default config.php
 
 ```php 
 <?php
 return array(
-    "debug"             => false,
-    "log_reporting"     => E_ALL,
-    "shutdown_display"  => true,
-    "agent_tag"         => "ag",
-    "agent_directories" => array("ag/"),
-    "line_offset"       => 0,
-    "template_ext"      => ".tpl",
+    "agent_tag"          => "ag",
+    "agent_directories"  => array( "ag/" ),
+    "debug"              => false,
+    "shutdown_display"   => false,
+    "line_offset"        => 0,
+    "template_ext"       => ".tpl",
+    "log_reporting"      => E_ALL,
+    "charset"            => "utf-8",
 );
 ```
 
@@ -511,8 +522,6 @@ Same as next.`\Tagent\Agent::self()->get('key','modulename');`
 
 Same as next.`\Tagent\Agent::self()->log('key','modulename',true,'modulename');`
 
-
-
 ###Pull / Loop
 
 >example
@@ -538,41 +547,67 @@ Same as next.`\Tagent\Agent::self()->log('key','modulename',true,'modulename');`
     </ag>
 ```
 
-#####method name  [Pull/Loop]
+#####method name  [Pull / Loop]
 
 camelCase and snake-case both available.  
 
     <ag Pull='Bar'></ag>
+    <ag Loop='Bar'></ag>
 
 ```
 function pullBar(){}  // camelCase
 function pull_bar(){} // snake-case
+
+function loopBar(){}  // camelCase
+function loop_bar(){} // snake-case
 ```
 
     <ag Pull='sub_main'></ag>  //  '_' underscore  
+    <ag Loop='sub_main'></ag>  //  '_' underscore  
 
 ```
 function pullSubMain(){}      // camelCase
 function pull\_sub\_main(){}  // snake-case
+
+function loopSubMain(){}      // camelCase
+function loop\_sub\_main(){}  // snake-case
 ```
 
 note : method name is case-insensitive in PHP.  
-note : Tagent\ModuleLoader is compatible psr-0.  convert from '\_' to DIRECTORY\_SEPALATOR in class name.  
 
 
-#####Class file / name
+#####Class file / name [Pull / Loop]
 
 ```
 config 'agent_directories = array('ag/');
 
-Pull='bar'  
-class file : `/ag/Module_Foo/Bar.php`  
-class name : `\Module_Foo\Pulls\Bar`  
+--- Moudle class ---
 
-Pull='sub_main'  
-class file : `/ag/Module_Foo/Sub/Main.php`  
-class name : `\Module_Foo\Pulls\Sub_Main.php`  
+Module='Foo' Pull='bar'  
+Module='Foo' Loop='bar'  
+  class file : `/ag/Module_Foo/Module.php`  
+  class name : `\Module_Foo\Module`  
+
+--- Independent Pull/Loop class --- 
+
+Module='Foo' Pull='bar'  
+  class file : `/ag/Module_Foo/Pulls/Bar.php`  
+  class name : `\Module_Foo\Pulls\Bar`  
+
+Module='Foo' Loop='bar'  
+  class file : `/ag/Module_Foo/Loops/Bar.php`  
+  class name : `\Module_Foo\Loops\Bar`  
+
+Module='Foo' Pull='sub_main'  
+  class file : `/ag/Module_Foo/Pulls/Sub/Main.php`  
+  class name : `\Module_Foo\Pulls\Sub_Main.php`  
+
+Module='Foo' Loop='sub_main'  
+  class file : `/ag/Module_Foo/Loops/Sub/Main.php`  
+  class name : `\Module_Foo\Loops\Sub_Main.php`  
 ```
+
+note : Tagent\ModuleLoader is compatible psr-0.  convert from '\_' to DIRECTORY\_SEPALATOR in class name.  
 
 #####Priority order of serarch method  [Pull/Loop]
 
