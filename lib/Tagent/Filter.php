@@ -42,7 +42,7 @@ class Filter
         if (($short = $this->removeDelimter($this->short))===false) {
             $short = preg_quote($this->short);
         }
-        $this->pattern = ($short=='') ? array($name) : array($name, $short) ;
+        $this->pattern = ($short=='') ? array($name) : array($short, $name ) ;
     }
 
     /**
