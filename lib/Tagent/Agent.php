@@ -6,11 +6,6 @@
  */
 namespace Tagent;
 
-use Tagent\AbstractModule;
-use Tagent\FactoryInterface;
-use Tagent\RefreshModuleInterface;
-use Tagent\CloseModuleInterface;
-
 class Agent
 {
     // config default
@@ -119,6 +114,21 @@ class Agent
      */
     protected function __construct(array $config = array())
     {
+        require_once(__DIR__.DIRECTORY_SEPARATOR.'Attribute.php');
+        require_once(__DIR__.DIRECTORY_SEPARATOR.'Buffer.php');
+        require_once(__DIR__.DIRECTORY_SEPARATOR.'Filter.php');
+        require_once(__DIR__.DIRECTORY_SEPARATOR.'FilterManager.php');
+        require_once(__DIR__.DIRECTORY_SEPARATOR.'HttpHeader.php');
+        require_once(__DIR__.DIRECTORY_SEPARATOR.'HttpHeaderManager.php');
+        require_once(__DIR__.DIRECTORY_SEPARATOR.'ModuleLoader.php');
+        require_once(__DIR__.DIRECTORY_SEPARATOR.'ParseResource.php');
+        require_once(__DIR__.DIRECTORY_SEPARATOR.'Utility.php');
+
+        require_once(__DIR__.DIRECTORY_SEPARATOR.'AbstractModule.php');
+        require_once(__DIR__.DIRECTORY_SEPARATOR.'CloseModuleInterface.php');
+        require_once(__DIR__.DIRECTORY_SEPARATOR.'FactoryInterface.php');
+        require_once(__DIR__.DIRECTORY_SEPARATOR.'RefreshModuleInterface.php');
+
         // set config default 
         $this->configs = array (
             "charset"           => self::CHARSET,
@@ -189,7 +199,7 @@ class Agent
                 $this->logger = new Logger();
             }
         } else {
-            return Utility::boolStr($this->configs['debug'], false);
+            return $this->configs['debug'];
         }
     }
     /**
@@ -363,10 +373,9 @@ class Agent
         return (isset($this->modules[$module]['objects'][$name])) ? true : false;
     }
     // pdo --------------------------------------------------------------------
-    // configs[pdo][name]   [dsn][username][password][options]
-
     /**
      * db return PDO handle
+     * configs[pdo][name]   [dsn][username][password][options]
      * @param type $name 
      * @return object|false
      */
@@ -696,7 +705,6 @@ class Agent
         $this->buffers[$name] .= $str;
         return $str;
     }
-
     /**
      * get buffer
      * @param  string $name 
@@ -723,7 +731,7 @@ class Agent
     public function obCallback($str)
     {
         chdir($this->cwd);
-        if ($this->debug()) {
+        if ($this->configs['debug']) {
             $e = error_get_last();
             if (! is_null($e)) {
                 $this->log($e['type'],"{$e['message']} in {$e['file']} ({$e['line']})",false,'PHP');
@@ -749,7 +757,7 @@ class Agent
             $source = ob_get_clean();
         }
         echo $this->fetch($source);
-        if ($this->debug()) {
+        if ($this->configs['debug']) {
             echo $this->logger->report($this->log_reporting());
         }
     }
@@ -797,7 +805,7 @@ class Agent
      * @todo Buffer, attribute store restore
      * @param  string $source
      * @param  object $resource
-     * @return string
+     * @return mixed string|void
      */
     public function fetch($source, ParseResource $resource = null)
     {
@@ -855,113 +863,45 @@ class Agent
 
             // attribute parse
             $attrs = new Attribute($attr, $resource);
+            // resource
+            $inResource = new ParseResource($resource->buffer);
+            $inResource->module = $resource->module;
+            $inResource->pullVars = $resource->pullVars;
+            $inResource->inTag = $inTag;
+            $inResource->inLoopVarsList = array('_NOLOOP_'=>$resource->loopVars);
+            $inResource->trimLineTag = $trimLineTag;
+            // attribute process
+            foreach ($attrs->reserved as $attr) {
+                $method = 'attr'.$attr[0];
+                $this->$method($attr[1], $attrs, $inResource);
+            }
 
-            // debug
-            if (isset($attrs->reserved['Debug'])) {
-                $this->debug(Utility::boolStr($attrs->reserved['Debug']));
-            }
-            // header
-            if (isset($attrs->reserved['Header'])) {
-                $header = $this->httpHeaderManager->header($attrs->reserved['Header']);
-                $this->log(E_NOTICE,"header({$header})",true,'AGENT');
-                header($header);
-            }
-            // store
-            if (isset($attrs->reserved['Store'])) {
-                $store = $attrs->reserved['Store'];
-                $buffer = $this->createBuffer($store);
-                $this->log(E_NOTICE,"Store: {$store}", true, $resource->module);
-            } else {
-                $buffer = $resource->buffer;
-            }
-            // resource 
-            $inResource = new ParseResource($buffer);
-            //module control
-            if (isset($attrs->reserved['Module'])) {
-                $module = $inResource->module = $attrs->reserved['Module'];
-                $this->openModule($module, $attrs->params);
-            } else {
-                $module = $inResource->module = $resource->module;
-            }
-            // reopen 
-            if (Utility::boolStr($attrs->reserved['Reopen'])) {
-                $this->reopenModule($module, $attrs->params);
-            }
-            // close
-            $forceClose = Utility::boolStr($attrs->reserved['Close'], false);
-            // refresh
-            if (Utility::boolStr($attrs->reserved['Refresh'], false)) {
-                $this->refreshModule($module, $attrs->params);
-            }
-            // pull vars
-            if (isset($attrs->reserved['Pull'])) {
-                $inResource->pullVars = $this->getPull($attrs->reserved['Pull'], $module, $attrs->params);
-            } else {
-                $inResource->pullVars = $resource->pullVars;
-            }
             // appends vars
             foreach ($attrs->appends as $key => $value) {
                 $inResource->pullVars[$key] = $value;
             }
-            // loop vars
-            $inLoopVarsList = (isset($attrs->reserved['Loop']))
-                            ? $this->getLoop($attrs->reserved['Loop'], $module, $attrs->params)
-                            : array('_NOLOOP_'=>$resource->loopVars);
-            // template
-            if (isset($attrs->reserved['Template'])) {
-                if ( ($content = $this->getTemplate($attrs->reserved['Template'], $module))!==false) {
-                    $inTag = $content; // replace inTag to template
-                }
-            }
-            // read
-            if (isset($attrs->reserved['Read'])) {
-                if ( ($content = $this->readFile($attrs->reserved['Read'], $module))!==false) {
-                    $inTag = $content; // replace inTag to file content.
-                }
-            }
-            // restore
-            if (isset($attrs->reserved['Restore'])) {
-                $restore = $attrs->reserved['Restore'];
-                if (! is_null($buffer = $this->getBuffer($restore))) {
-                    $inTag = (string) $buffer;
-                    $this->log(E_NOTICE,"Restore: {$restore}", true, $resource->module);
-                } else {
-                    $this->log(E_WARNING,"Restore: {$restore} Not Found Buffer", true, $resource->module);
-                }
-            }
-            // trim
-            if (Utility::boolStr($attrs->reserved['Trim'], false)) {
-                preg_match('/^\s*/', $inTag, $trimMatch);
-                $trimLineTag += substr_count($trimMatch[0],"\n");
-                $inTag = preg_replace('/(^\s*|\s*$)/', '', $inTag);
-            }
-            // check
-            if (Utility::boolStr($attrs->reserved['Check'], false)) {
-                $this->checkResourceLog($inResource, $inLoopVarsList);
-            }
-
             // output parse switch
-            if (Utility::boolStr($attrs->reserved['Parse'], true) ) {
+            if ($inResource->parse) {
                 // parse = yes
-                foreach($inLoopVarsList as $key => $inResource->loopVars) {
-                    $this->line = $beforeLine + $trimLineTag; 
+                foreach($inResource->inLoopVarsList as $key => $inResource->loopVars) {
+                    $this->line = $beforeLine + $inResource->trimLineTag; 
                     $inResource->loopkey = ($key !== '_NOLOOP_') ? $key : '';
                     // recursive fetch inside
-                    $this->fetch($inTag, $inResource);
+                    $this->fetch($inResource->inTag, $inResource);
                 }
             } else {
                 // parse = no
-                $inResource->buffer($inTag);
+                $inResource->buffer($inResource->inTag);
                 $this->log(E_NOTICE,'Parse: No', true, $resource->module);
             }
             $this->line = $matchLine;
 
             // close module
-            if ($forceClose) {
-                if ($module !== 'GLOBAL' ) {
-                    $this->closeModule($module);
+            if ($inResource->forceClose) {
+                if ($inResource->module !== 'GLOBAL' ) {
+                    $this->closeModule($inResource->module);
                 } else {
-                    $this->log(E_WARNING, "GLOBAL module can not be forced close", true, $module);
+                    $this->log(E_WARNING, "GLOBAL module can not be forced close", true, $inResource->module);
                 }
             }
             // line incriment source trim 
@@ -980,12 +920,183 @@ class Agent
             $this->closeAllModule(array_keys($modules));
             $this->line = 0;
             return $resource->buffer;
-
         } else {
             $resource->varFetch($source);
             $this->line = $sourceLine;
         }
-
+    }
+    /**
+     * attribute 'Debug' process
+     * @param object $attrs
+     * @param object $resource 
+     * @return void
+     */
+    protected function attrDebug($value, $attrs, $inResource)
+    {
+        $this->debug(Utility::boolStr($value, false));
+    }
+    /**
+     * attribute 'Header' process
+     * @param object $attrs
+     * @param object $resource 
+     * @return void
+     */
+    protected function attrHeader($value, $attrs, $inResource)
+    {
+        $header = $this->httpHeaderManager->header($value);
+        $this->log(E_NOTICE,"header({$header})",true,'AGENT');
+        header($header);
+    }
+    /**
+     * attribute 'Store' process
+     * @param object $attrs
+     * @param object $resource 
+     * @return void
+     */
+    protected function attrStore($value, $attrs, $inResource)
+    {
+        $inResource->setBuffer($this->createBuffer($value));
+        $this->log(E_NOTICE,"Store: {$value}", true, 'AGENT');
+    }
+    /**
+     * attribute 'Module' process
+     * @param object $attrs
+     * @param object $resource 
+     * @return void
+     */
+    protected function attrModule($value, $attrs, $inResource)
+    {
+        $module = $inResource->module = $value;
+        $this->openModule($module, $attrs->params);
+    }
+    /**
+     * attribute 'Reopen' process
+     * @param object $attrs
+     * @param object $resource 
+     * @return void
+     */
+    protected function attrReopen($value, $attrs, $inResource)
+    {
+        if (Utility::boolStr($value, false)) {
+            $this->reopenModule($inResource->module, $attrs->params);
+        }
+    }
+    /**
+     * attribute 'Close' process
+     * @param object $attrs
+     * @param object $resource 
+     * @return void
+     */
+    public function attrClose($value, $attrs, $inResource)
+    {
+        $inResource->forceClose = Utility::boolStr($value, false);
+    }
+    /**
+     * attribute 'Refresh' process
+     * @param object $attrs
+     * @param object $resource 
+     * @return void
+     */
+    protected function attrRefresh($value, $attrs, $inResource)
+    {
+        if (Utility::boolStr($value)) {
+            $this->refreshModule($inResource->module, $attrs->params);
+        }
+    }
+    /**
+     * attribute 'Pull' process
+     * @param object $attrs
+     * @param object $resource 
+     * @return void
+     */
+    protected function attrPull($value, $attrs, $inResource)
+    {
+        $inResource->pullVars = $this->getPull($value, $inResource->module, $attrs->params);
+    }
+    /**
+     * attribute 'Loop' process
+     * @param object $attrs
+     * @param object $resource 
+     * @return void
+     */
+    protected function attrLoop($value, $attrs, $inResource)
+    {
+        $inResource->inLoopVarsList = $this->getLoop($value, $inResource->module, $attrs->params);
+    }
+    /**
+     * attribute 'Template' process
+     * @param object $attrs
+     * @param object $resource 
+     * @return void
+     */
+    protected function attrTemplate($value, $attrs, $inResource)
+    {
+        if ( ($content = $this->getTemplate($value, $inResource->module))!==false) {
+            $inResource->inTag = $content; // replace inTag to template
+        }
+    }
+    /**
+     * attribute 'Read' process
+     * @param object $attrs
+     * @param object $resource 
+     * @return void
+     */
+    protected function attrRead($value, $attrs, $inResource)
+    {
+        if ( ($content = $this->readFile($value, $inResource->module))!==false) {
+            $inResource->inTag = $content; // replace inTag to file content.
+        }
+    }
+    /**
+     * attribute 'Restore' process
+     * @param object $attrs
+     * @param object $resource 
+     * @return void
+     */
+    protected function attrRestore($value, $attrs, $inResource)
+    {
+        if (! is_null($buffer = $this->getBuffer($value))) {
+            $inResource->inTag = (string) $buffer;
+            $this->log(E_NOTICE,"Restore: {$value}", true, 'AGENT');
+        } else {
+            $this->log(E_WARNING,"Restore: {$value} Not Found Buffer", true, 'AGENT');
+        }
+    }
+    /**
+     * attribute 'Trim' process
+     * @param object $attrs
+     * @param object $resource 
+     * @return void
+     */
+    protected function attrTrim($value, $attrs, $inResource)
+    {
+        if (Utility::boolStr($value, false)) {
+            preg_match('/^\s*/', $inTag, $trimMatch);
+            $inResource->trimLineTag += substr_count($trimMatch[0],"\n");
+            $inResource->inTag = preg_replace('/(^\s*|\s*$)/', '', $inTag);
+        }
+    }
+    /**
+     * attribute 'Check' process
+     * @param object $attrs
+     * @param object $resource 
+     * @return void
+     */
+    public function attrCheck($value, $attrs, $inResource)
+    {
+        if (Utility::boolStr($value, false)) {
+            $this->checkResourceLog($inResource);
+        }
+    }
+    /**
+     * attribute 'Parse' process
+     * @param object $attrs
+     * @param object $resource 
+     * @return void
+     */
+    public function attrParse($value, $attrs, $inResource)
+    {
+        $inResource->parse = Utility::boolStr($value, true);
     }
     // Error for debug -------------------------------------------
     /**
@@ -994,7 +1105,7 @@ class Agent
      */
     public function getLogReport()
     {
-        if ($this->debug()) {
+        if ($this->configs['debug']) {
             return $this->logger->report($this->log_reporting());
         }
         return false;
@@ -1008,7 +1119,7 @@ class Agent
      */
     public function log($level, $message, $escape = true, $module = "", $callerback = null)
     {
-        if ($this->debug()) {
+        if ($this->configs['debug']) {
             if (! is_null($callerback)) {
                 $br = ($escape) ? "\n" : '<br />';
                 $caller = Utility::getCaller((int) $callerback + 1);
@@ -1019,13 +1130,13 @@ class Agent
             $this->logger->log($level, $message, $escape, $module);
         }
     }
-    public function checkResourceLog(ParseResource $resource, $inLoopVarsList)
+    public function checkResourceLog(ParseResource $resource)
     {
-        if ($this->debug()) {
+        if ($this->configs['debug']) {
             $module = $resource->module;
             $check  = "<ul>";
             $check .= " <li>Pull variables\n".ExpandVariable::expand($resource->pullVars)."</li>";
-            $check .= " <li>Loop variables\n".ExpandVariable::expand($inLoopVarsList)."</li>";
+            $check .= " <li>Loop variables\n".ExpandVariable::expand($resource->inLoopVarsList)."</li>";
             $check .= " <li>{$module} Module variables\n".ExpandVariable::expand($this->getVariable(null, $module))."</li>";
             if ($module !== 'GLOBAL') {
                 $check .= " <li>GLOBAL Module variables\n".ExpandVariable::expand($this->getVariable(null, 'GLOBAL'))."</li>";
