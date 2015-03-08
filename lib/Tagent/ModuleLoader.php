@@ -40,7 +40,7 @@ class ModuleLoader
         if (isset($agentDirectory)) {
             $this->agentDirectorys = $agentDirectory;
         }
-        spl_autoload_register(array($this,'LoadModule'));
+        spl_autoload_register(array($this, 'LoadModule'), true, true);
     }
     /**
      * Registered with the spl_autoload.
@@ -50,6 +50,9 @@ class ModuleLoader
      */
     public function LoadModule($className)
     {
+        if ( $className[0] != 'M' || substr($className, 0, 7) != 'Module_') {
+            return;
+        }
         $className = ltrim($className, '\\');
         $fileName  = '';
         $namespace = '';
@@ -57,16 +60,14 @@ class ModuleLoader
             $namespace = substr($className, 0, $lastNsPos);
             $className = substr($className, $lastNsPos + 1);
         }
-        if ( strpos($namespace,'Module_')==0 ) {
-            $fileName  = str_replace('\\', DIRECTORY_SEPARATOR, $namespace).DIRECTORY_SEPARATOR;
-            $fileName .= str_replace('_', DIRECTORY_SEPARATOR, $className).'.php'; // psr-0
-//            $fileName .= $className;
+        $fileName  = str_replace('\\', DIRECTORY_SEPARATOR, $namespace).DIRECTORY_SEPARATOR;
+        $fileName .= str_replace('_', DIRECTORY_SEPARATOR, $className).'.php'; // psr-0
+//      $fileName .= $className;
 
-            foreach ($this->agentDirectorys as $directory) {
-                if (is_readable($directory.$fileName)) {
-                    require $directory.$fileName;
-                    return true;
-                }
+        foreach ($this->agentDirectorys as $dir) {
+            if (is_readable($dir.$fileName)) {
+                require $dir.$fileName;
+                return true;
             }
         }
     }
