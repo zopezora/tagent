@@ -52,8 +52,8 @@ class Filter
      */
     public function removeDelimter($str)
     {
-        if (preg_match('/^\/(.*)\/$/', $str, $match)) {
-            return $match[1];
+        if ($str!=='' && $str[0]=='/' && substr($str,-1)=='/') {
+            return trim($str,'/');
         }
         return false;
     }
