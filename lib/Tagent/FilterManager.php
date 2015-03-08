@@ -121,13 +121,19 @@ class FilterManager
     public function setPattern()
     {
         $patterns = array();
+        $lens = array();
         foreach ($this->filters as $filter) {
-            $patterns = array_merge($patterns, $filter->getPattern());
+            foreach($filter->getPattern() as $pattern) {
+                $patterns[] = $pattern;
+                $lens[] = strlen($pattern);
+            }
         }
-        usort($patterns,function($a, $b){
-            return (strlen($a) - strlen($b));
-        });
-        return $this->pattern = implode('|',$patterns);
+        asort($lens);
+        $sorted = array();
+        foreach($lens as $key => &$len) {
+            $sorted[] = $patterns[$key];
+        }
+        return $this->pattern = implode('|',$sorted);
     }
     /**
      * get pattern
