@@ -813,8 +813,7 @@ class Agent
         $flagGlobal = false;
         if (is_null($resource)) {
             $this->line = 0;
-            $buffer = $this->createBuffer();
-            $resource = new ParseResource($buffer);
+            $resource = new ParseResource();
             $this->openModule('GLOBAL');
             $flagGlobal = true;
             $this->line = 1;
@@ -864,11 +863,9 @@ class Agent
             // attribute parse
             $attrs = new Attribute($attr, $resource);
             // resource
-            $inResource = new ParseResource($resource->buffer);
-            $inResource->module = $resource->module;
-            $inResource->pullVars = $resource->pullVars;
+            $inResource = new ParseResource($resource);
             $inResource->inTag = $inTag;
-            $inResource->inLoopVarsList = array('_NOLOOP_'=>$resource->loopVars);
+            unset($inTag);
             $inResource->trimLineTag = $trimLineTag;
             // attribute process
             foreach ($attrs->reserved as $attr) {
@@ -1071,9 +1068,9 @@ class Agent
     protected function attrTrim($value, $attrs, $inResource)
     {
         if (Utility::boolStr($value, false)) {
-            preg_match('/^\s*/', $inTag, $trimMatch);
+            preg_match('/^\s*/', $inResource->inTag, $trimMatch);
             $inResource->trimLineTag += substr_count($trimMatch[0],"\n");
-            $inResource->inTag = preg_replace('/(^\s*|\s*$)/', '', $inTag);
+            $inResource->inTag = preg_replace('/(^\s*|\s*$)/', '', $inResource->inTag);
         }
     }
     /**
