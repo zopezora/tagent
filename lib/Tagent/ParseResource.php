@@ -52,9 +52,17 @@ class ParseResource {
      * constructor
      * @return void
      */
-    public function __construct(Buffer $buffer)
+    public function __construct(ParseResource $resource = null)
     {
-        $this->buffer = $buffer;
+        if (isset($resource)) {
+            $this->buffer = $resource->buffer;
+            $this->module = $resource->module;
+            $this->pullVars = $resource->pullVars;
+            $this->inLoopVarsList = array('_NOLOOP_'=>$resource->loopVars);
+        } else {
+            $agent = Agent::self();
+            $this->buffer = $agent->createBuffer();
+        }
     }
     /**
      * set Buffer object
