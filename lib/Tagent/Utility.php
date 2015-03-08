@@ -60,7 +60,7 @@ class Utility
     }
     /**
      * nearly array_merge. 
-     * some difference  append int-key renumbering-key, override same key's value by source.
+     * int-keys are renumbering, override same key's value by source.
      * @param  array $root
      * @param  array $source 
      * @return array
