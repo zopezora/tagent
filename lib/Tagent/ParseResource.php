@@ -18,22 +18,50 @@ class ParseResource {
     public $pullVars = array();
     /**
      * @var array
-     */ 
+     */
     public $loopVars = array();
+    /**
+     * @var array
+     */
+    public $inLoopVarsList = array();
     /**
      * @var string
      */ 
     public $loopkey = '';
-
+    /**
+     * @var string
+     */ 
+    public $inTag = '';
+    /**
+     * @var integer
+     */
+    public $trimLineTag = 0;
     /**
      * @var object Buffer
      */
     public $buffer = null;
     /**
+     * @var bool
+     */
+    public $forceClose = false;
+    /**
+     * @var bool 
+     */
+    public $parse = true;
+    /**
      * constructor
      * @return void
      */
     public function __construct(Buffer $buffer)
+    {
+        $this->buffer = $buffer;
+    }
+    /**
+     * set Buffer object
+     * @param object $buffer 
+     * @return void
+     */
+    public function setBuffer($buffer)
     {
         $this->buffer = $buffer;
     }
