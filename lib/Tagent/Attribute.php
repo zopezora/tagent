@@ -8,23 +8,26 @@ class Attribute
     /**
      * @var array
      */
-    public $reserved = array(
-                "Module"        => null,
-                "Pull"          => null,
-                "Loop"          => null,
-                "Read"          => null,
-                "Trim"          => null,
-                "Parse"         => null,
-                "Close"         => null,
-                "Check"         => null,
-                "Debug"         => null,
-                "Store"         => null,
-                "Header"        => null,
-                "Reopen"        => null,
-                "Restore"       => null,
-                "Refresh"       => null,
-                "Template"      => null,
-    );
+    public $reserved = array();
+
+    // public $reservedQueue = null;
+    // protected $priorityTable = array(
+    //             "Debug"         => 15,
+    //             "Header"        => 14,
+    //             "Store"         => 13,
+    //             "Module"        => 12,
+    //             "Reopen"        => 11,
+    //             "Refresh"       => 10,
+    //             "Pull"          => 9,
+    //             "Loop"          => 8,
+    //             "Template"      => 7,
+    //             "Read"          => 6,
+    //             "Restore"       => 5,
+    //             "Trim"          => 4,
+    //             "Check"         => 3,
+    //             "Parse"         => 2,
+    //             "Close"         => 1,
+    // );
     /**
      * @var array
      */
@@ -41,9 +44,8 @@ class Attribute
      */
     public function __construct($source, ParseResource $resource)
     {
-        $agent = Agent::self();
-        $pattern = "/(?:[^'\"\s]+|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*')+/";
-        if (preg_match_all( $pattern,$source,$matches)) {
+//        $this->reservedQueue = new \SplPriorityQueue;
+        if (preg_match_all("/(?:[^'\"\s]+|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*')+/", $source, $matches)) {
             $array = $matches[0];
             $valid_pattern    = "/(?|(\w+)|(\[\w+\]))=([^'\"\s]+|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*')/";
 
@@ -54,25 +56,28 @@ class Attribute
                 if (preg_match($valid_pattern, $v, $sp_match)){
                     $key   = $sp_match[1];   // foo or [foo]
                     $value = $sp_match[2];   // 'bar' or {@name}
-                    // sepalate reserved attribute
-                    $parentkey = 'params';
-                    if (preg_match($reserved_pattern, $key, $attr_match)){
-                        $parentkey = 'reserved';
-                    } else {
-                        if (preg_match($varkey_pattern, $key, $varkey_match)) {
-                            $parentkey = 'appends';
-                            $key = $varkey_match[1];
-                        }
-                    }
+
                     if (($ret = Utility::removeQuote($value)) !== false) {
                         $value = $ret;
                     } else {
                         // un quate value, try for fetch {@VARIABLE}
                         $value = $resource->varFetch($value, true);
                     }
-                    $this->{$parentkey}[$key] = $value;
+                    // sepalate reserved attribute
+                    $parentkey = 'params';
+                    if (preg_match($reserved_pattern, $key, $attr_match)){
+                        $this->reserved[]= array($key, $value);
+//                        $this->reservedQueue->insert(array($key, $value), $this->priorityTable[$key]);
+                    } else {
+                        if (preg_match($varkey_pattern, $key, $varkey_match)) {
+                            $parentkey = 'appends';
+                            $key = $varkey_match[1];
+                        }
+                        $this->{$parentkey}[$key] = $value;
+                    }
                 } else {
                     // Unvalid attribute
+                    $agent = Agent::self();
                     $agent->log(E_WARNING, "Unvalid attribute (".$v.")", true, $resource->module);
                 }
             } // end of foreach
