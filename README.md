@@ -88,9 +88,4 @@ It is possible to add user-defined filters.
 
 #####Todo now
 
-* shape up / cost tune Agent::fetch()
-
-* config method name default case. (switch camel or snake)  
-
-* functional variable   {@function('foo',...)} or {#function('foo',...)} etc  nnn logical?
-
+* filter bug.  handling  of '|' of filter name.
