@@ -23,83 +23,55 @@ class FilterManager
      */
     public function __construct() 
     {
+        require_once(__DIR__.DIRECTORY_SEPARATOR."DefaultFilter.php");
+        $class = 'Tagent\DefaultFilter';
+
         // html
-        $this->filters[] = new Filter('html','h',
-            function($str, $name) {
-                $agent = Agent::self();
-                $charset = $agent->getConfig('charset');
-                return (isset($str)) ? htmlspecialchars((string) $str, ENT_QUOTES, $charset) : null;
-            }
-        );
+        $this->filters[] = new Filter('html',
+                                      'h',  
+                                       array($class, 'htmlFilter')
+                                     );
         // raw
-        $this->filters[] = new Filter('raw','r',
-            function($str, $name) {
-                return (isset($str)) ? (string) $str : null;
-            }
-        );
+        $this->filters[] = new Filter('raw',
+                                      'r',  
+                                       array($class, 'rawFilter')
+                                     );
         // url
-        $this->filters[] = new Filter('url','u',
-            function($str, $name) {
-                return (isset($str)) ? urlencode((string) $str) : null;
-            }
-        );
+        $this->filters[] = new Filter('url',
+                                      'u',  
+                                       array($class, 'urlFilter')
+                                     );
         // json
-        $this->filters[] = new Filter('json','j',
-            function($str, $name) {
-                return (isset($str)) ? json_encode($str) : null;
-            }
-        );
+        $this->filters[] = new Filter('json',
+                                      'j',
+                                       array($class, 'jsonFilter')
+                                     );
         // base
-        $this->filters[] = new Filter('base64','b',
-            function($str, $name) {
-                return (isset($str)) ? base64_encode($str) : null;
-            }
-        );
+        $this->filters[] = new Filter('base64',
+                                      'b',
+                                       array($class, 'base64Filter')
+                                     );
         // nl2br
-        $this->filters[] = new Filter('nl2br','br',
-            function($str, $name) {
-                return (isset($str)) ? nl2br($str) : null;
-            }
-        );
+        $this->filters[] = new Filter('nl2br',
+                                      'br',
+                                       array($class, 'nl2brFilter')
+                                     );
         // space
-        $this->filters[] = new Filter('nbsp','',
-            function($str, $name) {
-                return (isset($str)) ? str_replace(' ', '&nbsp;', $str) : null;
-            }
-        );
+        $this->filters[] = new Filter('nbsp',
+                                      '',
+                                       array($class, 'nbspFilter')
+                                     );
         // format by printf
-        $this->filters[] = new Filter('/f'.Utility::IN_QUOTE_PATTERN.'/', '',
-            function($str, $name) {
-                preg_match('/^f('.Utility::IN_QUOTE_PATTERN.')$/', $name, $match);
-                $format = Utility::removeQuote($match[1]);
-                return (isset($str)) ? sprintf($format, $str) : null;
-            }
-        );
+        $this->filters[] = new Filter('/f'.Utility::IN_QUOTE_PATTERN.'/',
+                                      '',
+                                       array($class, 'printfFilter')
+                                     );
         // basic arithmetic operations
-        $this->filters[] = new Filter('/(?:\+|-|\*|\/|%|\*\*|\^)(?:\d+)(?:\.\d+|)/', '',
-            function($str, $name) {
-                preg_match('/(\+|-|\*|\/|%|\*\*|\^)((?:\d+)(?:\.\d+|))/', $name, $match);
-                $op    = $match[1];
-                $param = $match[2];
-                switch ($op) {
-                    case "+":
-                        return $str + $param;
-                    case "-":
-                        return $str - $param;
-                    case "*":
-                        return $str * $param;
-                    case "/":
-                        return $str / $param;
-                    case "%":
-                        return $str % $param;
-                    case "**":
-                    case "^":
-                        return pow($str, $param);
-                }
-                return $str;
-            }
-        );
-        // init pattern
+        $this->filters[] = new Filter('/(?:\+|-|\*|\/|%|\*\*|\^)(?:\d+)(?:\.\d+|)/',
+                                      '',
+                                       array($class, 'arithmeticFilter')
+                                     ); 
+        // generate pattern
         $this->setPattern();
     }
     /**
@@ -115,7 +87,7 @@ class FilterManager
         $this->setPattern();
     }
     /**
-     * Regular expression pattern (w/o delimiter)
+     * generate Regular expression pattern (w/o delimiter)
      * @return string
      */
     public function setPattern()
