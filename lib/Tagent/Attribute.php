@@ -1,4 +1,9 @@
 <?php
+/**
+ * Attribute, part of Tagent
+ * tag parser, module control, Object locator
+ * @package Tagent
+ */
 namespace Tagent;
 
 class Attribute
