@@ -27,6 +27,10 @@ class Agent
      */
     protected $configs = array();
     /**
+     * @var string
+     */
+    protected $tagPattern = '';
+    /**
      * @var object   Object ModuleLoader
      */
     protected $loader = null;
@@ -801,72 +805,89 @@ class Agent
         return false;
     }
     /**
-     * fetch tag parse . Retrieve nested 'agent tag' by recursive call.
-     * @todo Buffer, attribute store restore
+     * start fetch 
+     * @param string $source 
+     * @return string
+     */
+    public function fetch($source){
+        $this->line = 0;
+        $resource = new ParseResource();
+        $this->openModule('GLOBAL');
+        $this->line = 1;
+        $this->log(E_NOTICE,'---------- PRE PROCESS [up to here]----------', true, $resource->module);
+
+        $tag = $this->getConfig("agent_tag"); // default ag
+        $this->tagPattern = "/<".$tag."\s*((?:[^'\">]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*')*?)\s*>((?:(?>[^<]+)|<(?!(".$tag."|\/".$tag.")(>|\s))|(?R))*)<\/".$tag.">/is";
+        $this->recursiveFetch($source, $resource, true);
+
+    // post-process global fetch
+        $this->log(E_NOTICE,'---------- POST PROCESS [from here]----------', true, $resource->module);
+        // all module close sequence
+        $modules = array_reverse($this->modules);
+        $this->closeAllModule(array_keys($modules));
+        $this->line = 0;
+        return $resource->buffer;
+    }
+    /**
+     * recursive fetch tag parse . Retrieve nested 'agent tag' by recursive call.
      * @param  string $source
      * @param  object $resource
      * @return mixed string|void
      */
-    public function fetch($source, ParseResource $resource = null)
+    protected function recursiveFetch($source, ParseResource $resource, $first = false)
     {
-        // pre-process  global fetch
-        $flagGlobal = false;
-        if (is_null($resource)) {
-            $this->line = 0;
-            $resource = new ParseResource();
-            $this->openModule('GLOBAL');
-            $flagGlobal = true;
-            $this->line = 1;
-            $this->log(E_NOTICE,'---------- PRE PROCESS [up to here]----------', true, $resource->module);
-        }
 
         $sourceLine = $this->line + substr_count($source, "\n");
+        $outputMethod = ($first) ? 'buffer' : 'varFetch';
 
-        $tag = $this->getConfig("agent_tag"); // default ag
-        $pattern = "/<".$tag."\s*((?:[^'\">]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*')*?)\s*>((?:(?>[^<]+)|<(?!(".$tag."|\/".$tag.")(>|\s))|(?R))*)<\/".$tag.">/is";
         // <tag> search
-        while (preg_match($pattern, $source, $matches, PREG_OFFSET_CAPTURE)) {
-            $match = $matches[0][0]; // <tag></tag>
-            $pos   = $matches[0][1]; // '<'' start posistion
-            $attr  = $matches[1][0]; // <tag $attr></tag>
-            $inTag = $matches[2][0]; // <tag>$inTag</tag>
-            $len   = strlen($match);
+        while (preg_match($this->tagPattern, $source, $matches, PREG_OFFSET_CAPTURE)) {
+            // $matches[0][0]   <tag> to </tag>
+            // $matches[0][1]   '<'' start posistion
+            // $matches[1][0]   tag attribute
+            // $matches[2][0]   inTag
 
-            $before = substr($source, 0, $pos);
-            $source = substr($source, $pos + $len);
+            // attribute parse
+            $attrs = new Attribute($matches[1][0], $resource); // $matches[1][0] <tag $attr></tag>
+
+            $before = substr($source, 0, $matches[0][1]);
+            $len   = strlen($matches[0][0]); // mattch <tag> to </tag>
+            $source = substr($source, $matches[0][1] + $len);
 
             // line
             $beforeLine = $this->line + substr_count($before, "\n");
-            $matchLine  = $beforeLine + substr_count($match, "\n");
+            $matchLine  = $beforeLine + substr_count($matches[0][0], "\n"); // match <tag> to </tag>
+
+            // attribute parse
+            $attrs = new Attribute($matches[1][0], $resource);
+            // resource
+            $inResource = new ParseResource($resource);
+            $inResource->inTag = $matches[2][0];
 
             // trimming
-            $trimLineTag   = 0;
             $trimLineSorce = 0;
-            if (preg_match('/(\n|^)[ \t]*$/', $before) && preg_match('/^[ \t]*\r?\n/', $inTag)) {
-                $before = rtrim($before, ' \t');
-                $inTag  = preg_replace('/^[ \t]*\r?\n/', '', $inTag, 1, $trimLineTag);
+
+            if (preg_match('/^[ \t]*\r?\n/', $inResource->inTag)) {
+                $last = strrpos($before, "\n");
+                $search = ($last===false) ? $before : substr($before, $last+1);
+                if (preg_match('/^[ \t]*$/', $search)) {
+                    $before = rtrim($before, " \t");
+                    $inResource->inTag = preg_replace('/^[ \t]*\r?\n/', '' , $inResource->inTag, 1, $inResource->trimLineTag);
+                }
             }
-            if (preg_match('/\n[ \t]*$/', $inTag) && preg_match('/^[ \t]*\r?\n/', $source)){
-                $inTag  = rtrim($inTag, ' \t');
-                $source = preg_replace('/^[ \t]*\r?\n/', '', $source, 1, $trimLineSorce);
+            if (preg_match('/^[ \t]*\r?\n/', $source)) {
+                $last = (int) strrpos($inResource->inTag, "\n");
+                $search = ($last===false) ? $inResource->inTag : substr($inResource->inTag, $last+1);
+                if (preg_match('/^[ \t]*$/', $search)) {
+                    $inResource->inTag  = rtrim($inResource->inTag, " \t");
+                    $source = preg_replace('/^[ \t]*\r?\n/', '', $source, 1, $trimLineSorce);
+                }
             }
 
             // varFetch before tag
-            if ($flagGlobal) {
-                $resource->buffer($before);
-            } else {
-                $resource->varFetch($before);
-            }
-            unset($before);
+            $inResource->$outputMethod($before);
             $this->line = $beforeLine;
 
-            // attribute parse
-            $attrs = new Attribute($attr, $resource);
-            // resource
-            $inResource = new ParseResource($resource);
-            $inResource->inTag = $inTag;
-            unset($inTag);
-            $inResource->trimLineTag = $trimLineTag;
             // attribute process
             foreach ($attrs->reserved as $attr) {
                 $method = 'attr'.$attr[0];
@@ -884,7 +905,7 @@ class Agent
                     $this->line = $beforeLine + $inResource->trimLineTag; 
                     $inResource->loopkey = ($key !== '_NOLOOP_') ? $key : '';
                     // recursive fetch inside
-                    $this->fetch($inResource->inTag, $inResource);
+                    $this->recursiveFetch($inResource->inTag, $inResource);
                 }
             } else {
                 // parse = no
@@ -906,21 +927,8 @@ class Agent
         } // end of while serch <tag>
 
         // remaining non Tag-match string 
-        if ($flagGlobal) {
-            $resource->buffer($source);
-            $this->line = $sourceLine;
-
-        // post-process global fetch
-            $this->log(E_NOTICE,'---------- POST PROCESS [from here]----------',true,$resource->module);
-            // all module close sequence
-            $modules = array_reverse($this->modules);
-            $this->closeAllModule(array_keys($modules));
-            $this->line = 0;
-            return $resource->buffer;
-        } else {
-            $resource->varFetch($source);
-            $this->line = $sourceLine;
-        }
+        $resource->$outputMethod($source);
+        $this->line = $sourceLine;
     }
     /**
      * attribute 'Debug' process
