@@ -105,8 +105,12 @@ class ParseResource {
             $key     = $matches[2][0];
             $index   = $matches[3][0];
 
-            $filter = ($matches[4][0]) ? substr($matches[4][0], 1) : 'h';
-            $filters = explode('|', $filter);
+            if ($matches[4][0]) {
+                preg_match_all("/\|(".$filterPattern.")/", $matches[4][0], $filterMatch);
+                $filters = $filterMatch[1];
+            } else {
+                $filters = array('h');
+            }
 
             $key_array = array($key);
             if (preg_match_all("/\[((?:(?>[^\[\]]+)|(?R))*)\]/", $index, $index_matches)) {
