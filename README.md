@@ -88,4 +88,4 @@ It is possible to add user-defined filters.
 
 #####Todo now
 
-* filter bug.  handling  of '|' of filter name.
+* Testing
