@@ -40,7 +40,7 @@ PHP template parser.
     <ag Module='Bar'>
       <ul>
         <ag Loop='Baz'>
-        <li>{@l:id|pf'%05d'}:{@l:name|h}</li>
+        <li>{@l:id|f'%05d'}:{@l:name|h}</li>
         </ag>
       </ul>
     </ag>
@@ -71,11 +71,15 @@ PHP template parser.
 {@scope:variable|filter}
 ```
 
-(optional) scope:  `loop`/`l` , `module`/`m` , `global`/`g`  
-*If not specified, it is scanned in the order of the pull loop module global
+* scope:(optional)  
+`loop`/`l` , `module`/`m` , `global`/`g`  
 
-(optional) filter `html`/`h` , `raw`/`r` ,`url`/`u` , `json`/`j` ,`base64`/`b`  
-*If not specified, html filter is applied
+* filter:(optional)  
+`html`/`h` , `raw`/`r` ,`url`/`u` , `json`/`j` ,`base64`/`b`  
+printf filter  
+`f'format'`  ex. `f'%05d'`  
+arithmetic operation filter  
+`+`,`-`,`*`,`/`,`^`  ex. `+1`,`-2.3`  
 
 It is possible to add user-defined filters.  
 
