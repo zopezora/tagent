@@ -8,7 +8,6 @@ namespace Tagent;
 
 class FilterManager 
 {
-
     /**
      * @var array  filter object contenaire
      */
@@ -56,7 +55,7 @@ class FilterManager
                                       'br',
                                        array($class, 'nl2brFilter')
                                      );
-        // space
+        // space to &nbsp;
         $this->filters[] = new Filter('nbsp',
                                       '',
                                        array($class, 'nbspFilter')
