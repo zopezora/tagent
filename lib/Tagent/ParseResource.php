@@ -105,13 +105,6 @@ class ParseResource {
             $key     = $matches[2][0];
             $index   = $matches[3][0];
 
-            if ($matches[4][0]) {
-                preg_match_all("/\|(".$filterPattern.")/", $matches[4][0], $filterMatch);
-                $filters = $filterMatch[1];
-            } else {
-                $filters = array('h');
-            }
-
             $key_array = array($key);
             if (preg_match_all("/\[((?:(?>[^\[\]]+)|(?R))*)\]/", $index, $index_matches)) {
                 foreach ($index_matches[1] as $im) {
@@ -156,6 +149,12 @@ class ParseResource {
             }
             if (isset($var)) {
                 //filter
+                if ($matches[4][0]) {
+                    preg_match_all("/\|(".$filterPattern.")/", $matches[4][0], $filterMatch);
+                    $filters = $filterMatch[1];
+                } else {
+                    $filters = array('h');
+                }
                 foreach ($filters as $filter){
                     $var = $agent->filterManager->filter($var, $filter);
                 }
