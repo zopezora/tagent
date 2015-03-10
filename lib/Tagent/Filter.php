@@ -24,6 +24,10 @@ class Filter
      */
     protected $pattern = null;
     /**
+     * @var array
+     */
+    protected $patterns = null;
+    /**
      * constructor
      * @param  string $name 
      * @param  string $short 
@@ -42,7 +46,8 @@ class Filter
         if (($short = $this->removeDelimter($this->short))===false) {
             $short = preg_quote($this->short);
         }
-        $this->pattern = ($short=='') ? array($name) : array($short, $name ) ;
+        $this->patterns = ($short=='') ? array($name) : array($short, $name ) ;
+        $this->pattern = "/^(".implode('|', $this->patterns).")$/";
     }
 
     /**
@@ -69,12 +74,12 @@ class Filter
         return $callable($str, $filterName);
     }
     /**
-     * getpattern
+     * getpatterns
      * @return array
      */
-    public function getPattern()
+    public function getPatterns()
     {
-        return $this->pattern;
+        return $this->patterns;
     }
     /**
      * match name
@@ -83,8 +88,7 @@ class Filter
      */
     public function isMatch($name)
     {
-        $pattern = "/^(".implode('|', $this->pattern).")$/";
-        return (preg_match($pattern, $name)) ? true : false;
+        return (preg_match($this->pattern, $name)) ? true : false;
     }
 
 }

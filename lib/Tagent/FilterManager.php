@@ -94,7 +94,7 @@ class FilterManager
         $patterns = array();
         $lens = array();
         foreach ($this->filters as $filter) {
-            foreach($filter->getPattern() as $pattern) {
+            foreach($filter->getPatterns() as $pattern) {
                 $patterns[] = $pattern;
                 $lens[] = strlen($pattern);
             }
