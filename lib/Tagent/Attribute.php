@@ -34,9 +34,8 @@ class Attribute
     public function __construct($source, ParseResource $resource)
     {
         if (preg_match_all(self::ATTRIBUTE_PATTERN, $source, $matches)) {
-            $array = $matches[0];
             $reserved_pattern = "/^(".self::RESERVED_ATTRS.")$/";
-            foreach($array as $v) {
+            foreach($matches[0] as &$v) {
                 // valid attribute
                 if (preg_match(self::VALID_PATTERN, $v, $sp_match)){
                     $key   = $sp_match[1];   // foo or [foo]
