@@ -122,7 +122,7 @@ class ParseResource {
             if ($return) {
                 $output .= substr($source, 0, $pos);
             } else {
-                $this->buffer(substr($source, 0, $pos));
+                $this->buffer->buffer(substr($source, 0, $pos));
                 $agent->line += substr_count(substr($source, 0, $pos), "\n");
             }
             // --- parse variable priority ---
@@ -166,7 +166,7 @@ class ParseResource {
             if ($return) {
                 $output .= $var;
             } else {
-                $this->buffer($var);
+                $this->buffer->buffer($var);
             }
             // remaining non-match string 
             $source = substr($source, $pos + $len);
@@ -176,7 +176,7 @@ class ParseResource {
         if ($return) {
             return $output.$source;
         } else {
-            $this->buffer($source);
+            $this->buffer->buffer($source);
             $agent->line += substr_count($source,"\n");
         }
     }

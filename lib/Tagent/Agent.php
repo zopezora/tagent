@@ -909,7 +909,7 @@ class Agent
                 }
             } else {
                 // parse = no
-                $inResource->buffer($inResource->inTag);
+                $inResource->buffer->buffer($inResource->inTag);
                 $this->log(E_NOTICE,'Parse: No', true, $resource->module);
             }
             $this->line = $matchLine;
