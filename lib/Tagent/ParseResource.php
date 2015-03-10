@@ -58,7 +58,7 @@ class ParseResource {
             $this->buffer = $resource->buffer;
             $this->module = $resource->module;
             $this->pullVars = $resource->pullVars;
-            $this->inLoopVarsList = array('_NOLOOP_'=>$resource->loopVars);
+            $this->inLoopVarsList = array($resource->loopkey => $resource->loopVars);
         } else {
             $agent = Agent::self();
             $this->buffer = $agent->createBuffer();
@@ -106,7 +106,7 @@ class ParseResource {
             $index   = $matches[3][0];
 
             $key_array = array($key);
-            if (preg_match_all("/\[((?:(?>[^\[\]]+)|(?R))*)\]/", $index, $index_matches)) {
+            if ($index != '' && preg_match_all("/\[((?:(?>[^\[\]]+)|(?R))*)\]/", $index, $index_matches)) {
                 foreach ($index_matches[1] as $im) {
                     $key_array[] = $this->varFetch($im, true);
                 }
@@ -120,16 +120,16 @@ class ParseResource {
             }
             // --- parse variable priority ---
             //  1.pullVars   2.$loopVars   3.moduleVars   4.globalmoduleVars
-            $scope = ($scope == "") ? "*" : strtoupper($scope[0]);
+            $scope = ($scope == '') ? '*' : strtoupper($scope[0]);
 
             $var = null;
             switch ($scope) {
-                case "*":
+                case '*':
                     $var = Utility::getValueByDeepkey($key_array, $this->pullVars);
                     if (isset($var)){
                         break;
                     } // else no break
-                case "L":
+                case 'L':
                     if ($key == 'LOOPKEY') {
                         $var = $this->loopkey;
                     } else {
@@ -138,12 +138,12 @@ class ParseResource {
                     if (isset($var) || $scope == "L") { 
                         break;
                     } // else no break
-                case "M": 
+                case 'M':
                     $var = Utility::getValueByDeepkey($key_array, $agent->getVariable(null, $this->module));
                     if (isset($var) || $scope == "M" || $this->module == 'GLOBAL') {
                         break;
                     } // else no break
-                case "G":
+                case 'G':
                     $var = Utility::getValueByDeepkey($key_array, $agent->getVariable(null, 'GLOBAL'));
                     break;
             }
@@ -176,7 +176,7 @@ class ParseResource {
             return $output.$source;
         } else {
             $this->buffer->buffer($source);
-            $agent->line += substr_count($source,"\n");
+            $agent->line += substr_count($source, "\n");
         }
     }
 
