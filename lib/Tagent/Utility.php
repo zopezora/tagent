@@ -90,10 +90,9 @@ class Utility
      * @param  array|object  $array
      * @return string|null
      */
-    public static function getValueByDeepkey($key_array, $array)
+    public static function getValueByDeepkey($key_array, $var)
     {
-        $var = $array;
-        foreach ($key_array as $index) {
+        foreach ($key_array as &$index) {
             if ((is_array($var) || $var instanceof \ArrayAccess ) && isset($var[$index])) {
                 $var = $var[$index];
             } elseif (is_object($var) && property_exists($var, $index)) {
