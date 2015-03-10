@@ -107,13 +107,6 @@ class FilterManager
         return $this->pattern = implode('|',$sorted);
     }
     /**
-     * get pattern
-     * @return string
-     */
-    public function getPattern(){
-        return $this->pattern;
-    }
-    /**
      * execute filter 
      * @param string $str 
      * @param string $name 
