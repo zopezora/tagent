@@ -11,7 +11,6 @@ class Attribute
     // const pattern
     const RESERVED_PATTERN  = "/^(Module|Pull|Loop|Read|Trim|Parse|Close|Check|Debug|Store|Header|Reopen|Restore|Refresh|Template)$/";
     const ATTRIBUTE_PATTERN = "/(?:[^'\"\s]+|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*')+/";
-    const VARKEY_PATTERN    = "/^\[(\w+)\]$/";
     const VALID_PATTERN     = "/(?|(\w+)|(\[\w+\]))=([^'\"\s]+|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*')/";
     /**
      * @var array
@@ -46,14 +45,13 @@ class Attribute
                         // un quate value, try for fetch {@VARIABLE}
                         $value = $resource->varFetch($value, true);
                     }
-                    // separate reserved appends params
-                    if (preg_match(self::RESERVED_PATTERN, $key, $attr_match)){
+                    if ($key[0]=='[') {
+                        $key = substr($key, 1 ,-1);
+                        $this->appends[$key] = $value;
+                    } elseif (preg_match(self::RESERVED_PATTERN, $key, $attr_match)){
                         $this->reserved[]= array($key, $value);
-                    } elseif (preg_match(self::VARKEY_PATTERN, $key, $varkey_match)) {
-                            $key = $varkey_match[1];
-                            $this->appends[$key] = $value;
                     } else {
-                            $this->params[$key] = $value;
+                        $this->params[$key] = $value;
                     }
                 } else {
                     // Unvalid attribute
