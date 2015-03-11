@@ -94,7 +94,7 @@ class ParseResource {
         $filterPattern = $agent->filterManager->pattern;
 
         $output = '';
-        $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())((?>\w+))(?|((?:\[(?:(?>[^\[\]]+)|(?R))\])+)|())(?|((?:\|(?:".$filterPattern."))+)|())}/i";
+        $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())((?>\w+))(?|((?:\[(?:(?>[^\[\]]+)|(?R))\])+)|())(?|((?:\|(?:".$filterPattern."))+)|())}/";
 
         while (preg_match($pattern, $source, $matches, PREG_OFFSET_CAPTURE)) {
             $match = $matches[0][0];
