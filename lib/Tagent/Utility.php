@@ -36,6 +36,18 @@ class Utility
         return $str;
     }
     /**
+     * remove regular expression delimiter
+     * @param string $str 
+     * @return string
+     */
+    public static function removeDelimter($str)
+    {
+        if ($str!='' && $str[0]=='/' && substr($str, -1)=='/') {
+            return substr($str, 1, -1);
+        }
+        return false;
+    }
+    /**
      * boolStr
      * @param  string $str 
      * @param  bool   $default 

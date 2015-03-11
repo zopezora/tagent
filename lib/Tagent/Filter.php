@@ -40,27 +40,14 @@ class Filter
         $this->short    = $short;
         $this->callable = $callable;
 
-        if (($name = $this->removeDelimter($this->name))===false) {
+        if (($name = Utility::removeDelimter($this->name))===false) {
             $name = preg_quote($this->name);
         }
-        if (($short = $this->removeDelimter($this->short))===false) {
+        if (($short = Utility::removeDelimter($this->short))===false) {
             $short = preg_quote($this->short);
         }
         $this->patterns = ($short=='') ? array($name) : array($short, $name ) ;
         $this->pattern = "/^(".implode('|', $this->patterns).")$/";
-    }
-
-    /**
-     * remove regular expression delimiter
-     * @param string $str 
-     * @return string
-     */
-    public function removeDelimter($str)
-    {
-        if ($str!=='' && $str[0]=='/' && substr($str,-1)=='/') {
-            return trim($str,'/');
-        }
-        return false;
     }
     /**
      * filter
