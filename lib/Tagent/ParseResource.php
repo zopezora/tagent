@@ -106,7 +106,7 @@ class ParseResource {
             $index   = $matches[3][0];
 
             $key_array = array($key);
-            if ($index != '' && preg_match_all("/\[((?:(?>[^\[\]]+)|(?R))*)\]/", $index, $index_matches)) {
+            if ($index != '' && preg_match_all("/\[((?:(?>[^\[\]]+)|({@[^}]+})))\]/", $index, $index_matches)) {
                 foreach ($index_matches[1] as $im) {
                     $key_array[] = $this->varFetch($im, true);
                 }
