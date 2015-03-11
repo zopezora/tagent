@@ -868,7 +868,7 @@ class Agent
             $trimLineSorce = 0;
 
             if (preg_match('/^[ \t]*\r?\n/', $inResource->inTag)) {
-                $last = (int) strrpos($before, "\n");
+                $last = strrpos($before, "\n");
                 $search = ($last===false) ? $before : substr($before, $last+1);
                 if (preg_match('/^[ \t]*$/', $search)) {
                     $before = rtrim($before, " \t");
@@ -876,7 +876,7 @@ class Agent
                 }
             }
             if (preg_match('/^[ \t]*\r?\n/', $source)) {
-                $last = (int) strrpos($inResource->inTag, "\n");
+                $last = strrpos($inResource->inTag, "\n");
                 $search = ($last===false) ? $inResource->inTag : substr($inResource->inTag, $last+1);
                 if (preg_match('/^[ \t]*$/', $search)) {
                     $inResource->inTag  = rtrim($inResource->inTag, " \t");
