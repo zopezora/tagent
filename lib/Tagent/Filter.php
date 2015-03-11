@@ -40,12 +40,8 @@ class Filter
         $this->short    = $short;
         $this->callable = $callable;
 
-        if (($name = Utility::removeDelimter($this->name))===false) {
-            $name = preg_quote($this->name);
-        }
-        if (($short = Utility::removeDelimter($this->short))===false) {
-            $short = preg_quote($this->short);
-        }
+        $name  = Utility::removeDelimter($name);
+        $short = Utility::removeDelimter($short);
         $this->patterns = ($short=='') ? array($name) : array($short, $name ) ;
         $this->pattern = "/^(".implode('|', $this->patterns).")$/";
     }

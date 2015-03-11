@@ -36,7 +36,7 @@ class Utility
         return $str;
     }
     /**
-     * remove regular expression delimiter
+     * remove regular expression delimiter Or preg_quote
      * @param string $str 
      * @return string
      */
@@ -45,7 +45,7 @@ class Utility
         if ($str!='' && $str[0]=='/' && substr($str, -1)=='/') {
             return substr($str, 1, -1);
         }
-        return false;
+        return preg_quote($str);
     }
     /**
      * boolStr
