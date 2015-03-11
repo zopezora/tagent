@@ -40,20 +40,18 @@ The user attributes are used as a properties array $params  (see `Module`, `Pull
 
 ```text
 {@scope:name|filter}
-   ex.{@foo}, {@m:foo}, {@foo|r},  {@global:foo|json}
+   ex.{@foo}, {@m:foo}, {@foo|r},  {@g:foo|json}
       {@foo|url|html} Specifies the multiple filters. Apply from left to right.
 ```
 
 #####Scope(option)  
 ```
-(-- nothing --)   Pull scope is top priority.  
-`loop`   or `l`   Loop scope  
-`module` or `m`   Current module scope  
-`global` or `g`   Global module scope  
+(-- nothing --)   Pull scope   or scanning order  Pull, Loop, Current module, Global module  
+`l`   loop        Loop scope  
+`m`   module      Current module scope  
+`g`   global      Global module scope  
 ```
-case-insensitive  
-By default scanning in the following order  
-`pull`, `loop`, `module`, `global`  
+case-sensitive  
 
 #####Variable Name  
 
@@ -836,7 +834,7 @@ class Module
 
 ```html
 <ag Module='Foo' Loop='Baz'>
-<li>{@id}-{@name}</li>
+<li>{@l:id}-{@l:name}</li>
 </ag>
 ```
 
@@ -870,7 +868,7 @@ class Module
 ```html
 <ul>
   <ag Module='Foo' loop='Baz'>
-  <li>{@article} {@LOOPKEY} is {@color}</li>
+  <li>{@l:article} {@l:LOOPKEY} is {@l:color}</li>
   </ag>
 </ul>
 ```

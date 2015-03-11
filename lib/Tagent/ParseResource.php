@@ -7,7 +7,7 @@ namespace Tagent;
 
 class ParseResource {
     // const pattern
-    const VARIABLE_SCOPES = 'm|l|g|module|loop|global';
+    const VARIABLE_SCOPES = '[lmg]';
     /**
      * @var string
      */
@@ -120,30 +120,29 @@ class ParseResource {
             }
             // --- parse variable priority ---
             //  1.pullVars   2.$loopVars   3.moduleVars   4.globalmoduleVars
-            $scope = ($scope == '') ? '*' : strtoupper($scope[0]);
 
             $var = null;
             switch ($scope) {
-                case '*':
+                case '':
                     $var = Utility::getValueByDeepkey($key_array, $this->pullVars);
                     if (isset($var)){
                         break;
                     } // else no break
-                case 'L':
+                case 'l':
                     if ($key == 'LOOPKEY') {
                         $var = $this->loopkey;
                     } else {
                         $var = Utility::getValueByDeepkey($key_array, $this->loopVars);
                     }
-                    if (isset($var) || $scope == "L") { 
+                    if (isset($var) || $scope == "l") { 
                         break;
                     } // else no break
-                case 'M':
+                case 'm':
                     $var = Utility::getValueByDeepkey($key_array, $agent->getVariable(null, $this->module));
-                    if (isset($var) || $scope == "M" || $this->module == 'GLOBAL') {
+                    if (isset($var) || $scope == "m" || $this->module == 'GLOBAL') {
                         break;
                     } // else no break
-                case 'G':
+                case 'g':
                     $var = Utility::getValueByDeepkey($key_array, $agent->getVariable(null, 'GLOBAL'));
                     break;
             }
