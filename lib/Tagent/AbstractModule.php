@@ -43,6 +43,7 @@ abstract class AbstractModule
      * set module variable by array.  always override
      * @param  array  $array 
      * @param  string $modulename 
+     * @param  int    $bk
      * @return void
      */
     final public function setVariablesByArray(array $array, $modulename = null, $bk = 1)
@@ -58,6 +59,7 @@ abstract class AbstractModule
      * get
      * @param  string $name 
      * @param  string $modulename 
+     * @param  int    $bk
      * @return object|null
      */
     final public function get($name , $modulename = null, $bk = 1)
@@ -72,6 +74,7 @@ abstract class AbstractModule
      * @param string $name 
      * @param object $object   if null , unset Object
      * @param string $modulename
+     * @param int    $bk
      * @return void
      */
     final public function set($name, $object, $modulename = null, $bk =1)
@@ -85,6 +88,7 @@ abstract class AbstractModule
      * has object
      * @param string $name 
      * @param string $modulename
+     * @param int    $bk
      * @return bool  true|false
      */
     final public function has($name, $modulename = null, $bk = 1)

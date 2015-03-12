@@ -46,7 +46,7 @@ class ModuleLoader
      * Registered with the spl_autoload.
      * Top-level namespace 'Module_***' only.   '_' no replacement
      * @param  string $className 
-     * @return true|void
+     * @return mixed true|void
      */
     public function LoadModule($className)
     {
