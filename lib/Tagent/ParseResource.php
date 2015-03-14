@@ -1,39 +1,42 @@
 <?php
 /**
- * Resource container for parse, part of Tagent
- * @package Tagent
+ * ParseResource class, part of Tagent
  */
 namespace Tagent;
-
-class ParseResource {
+/**
+ * Resource for parsing variable
+ * @package Tagent
+ */
+class ParseResource
+{
     // const pattern
     const VARIABLE_SCOPES = '[lmg]';
     /**
-     * @var string
+     * @var string current module name 
      */
     public $module = 'GLOBAL';
     /**
-     * @var array
+     * @var array pull variable array
      */
     public $pullVars = array();
     /**
-     * @var array
+     * @var array current loop variable array
      */
     public $loopVars = array();
     /**
-     * @var array
+     * @var array loop variable array
      */
     public $inLoopVarsList = array();
     /**
-     * @var string
+     * @var string loopkey
      */ 
     public $loopkey = '';
     /**
-     * @var string
+     * @var string string inside tag
      */ 
     public $inTag = '';
     /**
-     * @var integer
+     * @var integer trimming line count
      */
     public $trimLineTag = 0;
     /**
@@ -41,15 +44,16 @@ class ParseResource {
      */
     public $buffer = null;
     /**
-     * @var bool
+     * @var bool force cloase true|false
      */
     public $forceClose = false;
     /**
-     * @var bool 
+     * @var bool parse switch true|false
      */
     public $parse = true;
     /**
      * constructor
+     * @param object $resource
      * @return void
      */
     public function __construct(ParseResource $resource = null)
@@ -94,21 +98,31 @@ class ParseResource {
         $filterPattern = $agent->filterManager->pattern;
 
         $output = '';
-        $pattern = "/{@(?|(".self::VARIABLE_SCOPES."):|())((?>\w+))(?|((?:\[(?:(?>[^\[\]]+)|(?R))\])+)|())(?|((?:\|(?:".$filterPattern."))+)|())}/";
+
+        $sDelim = ($return) ? '(': '{(';
+        $eDelim = ($return) ? ')': ')}';
+
+        $pattern = '/'.$sDelim.'@(?|('.self::VARIABLE_SCOPES.'):|())((?>\w+))(?|((?:\[(?:'.Utility::IN_QUOTE_PATTERN.'|(?>[^\[\]]+)|(?1))\])+)|())(?|((?:\|(?:'.$filterPattern.'))+)|())'.$eDelim.'/';
 
         while (preg_match($pattern, $source, $matches, PREG_OFFSET_CAPTURE)) {
             $match = $matches[0][0];
             $pos   = $matches[0][1];
             $len   = strlen($match);
 
-            $scope   = $matches[1][0];
-            $key     = $matches[2][0];
-            $index   = $matches[3][0];
+            $scope   = $matches[2][0];
+            $key     = $matches[3][0];
+            $index   = $matches[4][0];
+            $filterString  = $matches[5][0];
 
             $key_array = array($key);
-            if ($index != '' && preg_match_all('/\[((?:(?>[^\[\]]+)|(?R))+)\]/', $index, $index_matches)) {
+            if ($index != '' && preg_match_all('/\[((?:'.Utility::IN_QUOTE_PATTERN.'|(?>[^\[\]]+)|(?R))+)\]/', $index, $index_matches)) {
                 foreach ($index_matches[1] as $im) {
-                    $key_array[] = $this->varFetch($im, true);
+                    if (($ret = Utility::removeQuote($im)) !== false) {
+                        $key_array[] = $ret;
+                    } else {
+                        // un quate value, try for fetch {@VARIABLE}
+                        $key_array[] = $this->varFetch($im, true);
+                    }
                 }
             }
             // Before the string of match
@@ -125,7 +139,7 @@ class ParseResource {
             switch ($scope) {
                 case '':
                     $var = Utility::getValueByDeepkey($key_array, $this->pullVars);
-                    if (isset($var)){
+                    if (isset($var)) {
                         break;
                     } // else no break
                 case 'l':
@@ -148,17 +162,17 @@ class ParseResource {
             }
             if (isset($var)) {
                 //filter
-                if ($matches[4][0]) {
-                    preg_match_all("/\|(".$filterPattern.")/", $matches[4][0], $filterMatch);
+                if ($filterString) {
+                    preg_match_all("/\|(".$filterPattern.")/", $filterString, $filterMatch);
                     $filters = $filterMatch[1];
                 } else {
-                    $filters = array('h');
+                    $filters = ($return) ? array(): array('h');
                 }
-                foreach ($filters as $filter){
+                foreach ($filters as $filter) {
                     $var = $agent->filterManager->filter($var, $filter);
                 }
             } else {
-                $agent->log(E_PARSE,'Not Found Variable  '.$match, true, $this->module);
+                $agent->log(E_PARSE, 'Not Found Variable  '.$match, true, $this->module);
                 $var = $match;
             }
             if ($return) {
