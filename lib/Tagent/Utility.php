@@ -1,15 +1,16 @@
 <?php
 /**
- * Utility, part of Tagent
- * for Module classes.
- * @package Tagent
+ * Utility class, part of Tagent
  */
 namespace Tagent;
-
+/**
+ * Common utility static method. 
+ * @package Tagent
+ */
 class Utility
 {
     const QUOTE_PATTERN = "/^(?|\"((?:\\\\\"|[^\"])*)\"|'((?:\\\\'|[^'])*)')$/";
-    const IN_QUOTE_PATTERN = "(?:\"((?:\\\\\"|[^\"])*)\"|'((?:\\\\'|[^'])*)')";
+    const IN_QUOTE_PATTERN = "(?:\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*')";
 
     // ---- Utility -------------------------------------------------
     /**
@@ -42,7 +43,7 @@ class Utility
      */
     public static function removeDelimter($str)
     {
-        if ($str!='' && $str[0]=='/' && substr($str, -1)=='/') {
+        if ($str != '' && $str[0] == '/' && substr($str, -1) == '/') {
             return substr($str, 1, -1);
         }
         return preg_quote($str);
@@ -55,17 +56,17 @@ class Utility
      */
     public static function boolStr($str, $default = false)
     {
-        if (is_bool($str)){
+        if (is_bool($str)) {
             return $str;
         }
-        //  yes|no , y|n  ,on|off    other return default
+        //  yes|no, y|n, on|off    other return default
         if (! is_string($str)) {
             return $default;
         }
-        if (preg_match("/^(y|on|yes|true)$/i",$str)) {
+        if (preg_match("/^(y|on|yes|true)$/i", $str)) {
             return true;
         }
-        if (preg_match("/^(n|no|off|false)$/i",$str)) {
+        if (preg_match("/^(n|no|off|false)$/i", $str)) {
             return false;
         }
         return $default;
@@ -124,7 +125,7 @@ class Utility
         $bt = debug_backtrace();
         $caller = array();
         $caller['file']      = (isset($bt[$back+1]) && isset($bt[$back+1]['file'])) ? $bt[$back+1]['file'] : '';
-        $dirs                = ($caller['file']) ? explode(DIRECTORY_SEPARATOR,dirname($caller['file'])) : false;
+        $dirs                = ($caller['file']) ? explode(DIRECTORY_SEPARATOR, dirname($caller['file'])) : false;
         $parentdir           = ($dirs) ? end($dirs) : '';
         $caller['shortfile'] = ($dirs) ? $parentdir.DIRECTORY_SEPARATOR.basename($caller['file']) : '' ;
         $caller['line']      = (isset($bt[$back+1]) && isset($bt[$back+1]['line'])) ? $bt[$back+1]['line'] : '';
@@ -142,10 +143,10 @@ class Utility
      * @return string
      */
     public static function getValueOrType($value) {
-        if (is_scalar($value)){
+        if (is_scalar($value)) {
             return (string) "'".$value."'";
         }
-        if (is_object($value)){
+        if (is_object($value)) {
             return "*".get_class($value)."*";
         }
 
