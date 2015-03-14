@@ -1,11 +1,12 @@
 <?php
 /**
- * Agent, part of Tagent
- * tag parser, module control, Object locator
- * @package Tagent
+ * Agent class, part of Tagent
  */
 namespace Tagent;
-
+/**
+ * Tag parser, module control, Object locator
+ * @package Tagent
+ */
 class Agent
 {
     // config default
@@ -23,15 +24,15 @@ class Agent
      */
     protected static $selfInstance = null;
     /**
-     * @var array  
+     * @var array config
      */
     protected $configs = array();
     /**
-     * @var string
+     * @var string Regular expression pattern for tag parse
      */
     protected $tagPattern = '';
     /**
-     * @var object   Object ModuleLoader
+     * @var object   ModuleLoader object
      */
     protected $loader = null;
     /**
@@ -39,7 +40,7 @@ class Agent
      */
     protected $modules = array();
     /**
-     * @var object filter manager object
+     * @var object FilterManager object
      */
     public $filterManager = null;
     /**
@@ -89,7 +90,7 @@ class Agent
      */
     public static function init(array $config = array())
     {
-        if (! isset(static::$selfInstance)){
+        if (! isset(static::$selfInstance)) {
             static::$selfInstance = new static($config);
         }
         return static::$selfInstance;
@@ -164,7 +165,7 @@ class Agent
             $callback = array($this, 'obCallback');
             ob_start($callback);
             ob_implicit_flush(false);
-            register_shutdown_function( array($this,'shutdown'));
+            register_shutdown_function( array($this, 'shutdown'));
         }
         // filter manager
         $this->filterManager = new FilterManager();
@@ -238,11 +239,11 @@ class Agent
     {
         if (! is_null($name) && ! is_string($name)) {
             $name = Utility::getValueOrType($name);
-            $this->log(E_WARNING, "getVariable({$name},'{$module}') Name must be a string", true,'AGENT_VARIABLE', $bk);
+            $this->log(E_WARNING, "getVariable({$name},'{$module}') Name must be a string", true, 'AGENT_VARIABLE', $bk);
             return null;
         }
         if (! isset($this->modules[$module])) {
-            $this->log(E_WARNING, "getVariable('{$name}','{$module}') Module not open yet", true,'AGENT_VARIABLE', $bk);
+            $this->log(E_WARNING, "getVariable('{$name}','{$module}') Module not open yet", true, 'AGENT_VARIABLE', $bk);
             return;
         }
         if (is_null($name)) {
@@ -251,7 +252,7 @@ class Agent
         if (isset($this->modules[$module]['variables'][$name])) {
             return $this->modules[$module]['variables'][$name];
         }
-        $this->log(E_WARNING,"getVariable('{$name}','{$module}') Not Found.", true, 'AGENT_VARIABLE', $bk);
+        $this->log(E_WARNING, "getVariable('{$name}', '{$module}') Not Found.", true, 'AGENT_VARIABLE', $bk);
         return null;
     }
     /**
@@ -267,7 +268,7 @@ class Agent
         if (is_null($name) || ! is_string($name)) {
             $name = Utility::getValueOrType($name);
             $v    = Utility::getValueOrType($value);
-            $this->log(E_WARNING, "setVariable({$name},{$v},'{$module}') Name must be a string", true,'AGENT_VARIABLE', $bk);
+            $this->log(E_WARNING, "setVariable({$name},{$v},'{$module}') Name must be a string", true, 'AGENT_VARIABLE', $bk);
             return;
         }
         if (! isset($this->modules[$module])) {
@@ -293,7 +294,7 @@ class Agent
     {
         if (! isset($this->modules[$module])) {
             $array = Utility::getValueOrType($array);
-            $this->log(E_WARNING, "setVariableByArray({$array},'{$module}'') Module not open yet", true,'AGENT_VARIABLE', $bk);
+            $this->log(E_WARNING, "setVariableByArray({$array},'{$module}'') Module not open yet", true, 'AGENT_VARIABLE', $bk);
             return;
         }
         $this->modules[$module]['variables'] = $array;
@@ -301,9 +302,9 @@ class Agent
     // Object Locator --------------------------------------------------------------------
     /**
      * get object
-     * @name   string $name 
-     * @param  string  $module
-     * @param  integer $bk caller backtrace number for log
+     * @param  string $name 
+     * @param  string $module
+     * @param  int    $bk caller backtrace number for log
      * @return object
      */
     public function get($name, $module = 'GLOBAL', $bk = 0)
@@ -314,17 +315,17 @@ class Agent
             return null;
         }
         if (! isset($this->modules[$module])) {
-            $this->log(E_WARNING,"get('{$name}','{$module}') module is not open yet.", true, 'AGENT_LOCATOR', $bk);
+            $this->log(E_WARNING, "get('{$name}','{$module}') module is not open yet.", true, 'AGENT_LOCATOR', $bk);
             return null;
         }
         if (! isset($this->modules[$module]['objects'][$name])) {
-            $this->log(E_WARNING,"get('{$name}','{$module}') Not Found.", true, 'AGENT_LOCATOR', $bk);
+            $this->log(E_WARNING, "get('{$name}','{$module}') Not Found.", true, 'AGENT_LOCATOR', $bk);
             return null;
         }
         $object = $this->modules[$module]['objects'][$name];
         if ($object instanceof FactoryInterface) {
             $this->modules[$module]['objects'][$name] = $object->factory();
-            $this->log(E_NOTICE,"get('{$name}','{$module}') call ".get_class($object)."->factory()", true, 'AGENT_LOCATOR', $bk);
+            $this->log(E_NOTICE, "get('{$name}','{$module}') call ".get_class($object)."->factory()", true, 'AGENT_LOCATOR', $bk);
             return $this->modules[$module]['objects'][$name];
         }
         return $object;
@@ -367,11 +368,11 @@ class Agent
     {
         if (! isset($name) || ! is_string($name) ) {
             $name = Utility::getValueOrType($name);
-            $this->log(E_WARNING,"has('{$name}', '{$module}') Name must be a string", true, 'AGENT_LOCATOR', $bk);
+            $this->log(E_WARNING, "has('{$name}', '{$module}') Name must be a string", true, 'AGENT_LOCATOR', $bk);
             return false;
         }
         if (! isset($this->modules[$module])) {
-            $this->log(E_WARNING,"has('{$name}','{$module}') module is not open yet.", true, 'AGENT_LOCATOR', $bk);
+            $this->log(E_WARNING, "has('{$name}','{$module}') module is not open yet.", true, 'AGENT_LOCATOR', $bk);
             return false;
         }
         return (isset($this->modules[$module]['objects'][$name])) ? true : false;
@@ -398,19 +399,19 @@ class Agent
             $options  = (isset($dbConfig['options']))  ? $dbConfig['options']  : array();
 
             if ($dsn == '') {
-                $this->log(E_ERROR,"Not found config dsn [db][{$name}][dsn]", true, 'AGENT_DB', 0);
+                $this->log(E_ERROR, "Not found config dsn [db][{$name}][dsn]", true, 'AGENT_DB', 0);
                 return false;
             }
             try {
                 $this->db[$name] = new \PDO($dsn, $user, $password, $options);
             } catch (\PDOException $e) {
-                $this->log(E_ERROR,$e->getMessage(), true, 'AGENT_DB', 0);
+                $this->log(E_ERROR, $e->getMessage(), true, 'AGENT_DB', 0);
                 return $this->db[$name] = false;
             }
-            $this->log(E_NOTICE,"Connect DB '{$name}': dsn={$dsn}", true, 'AGENT_DB', 0);
+            $this->log(E_NOTICE, "Connect DB '{$name}': dsn={$dsn}", true, 'AGENT_DB', 0);
             return $this->db[$name];
         } else {
-            $this->log(E_ERROR,"Not found DB config {$name}", true, 'AGENT_DB', 0);
+            $this->log(E_ERROR, "Not found DB config {$name}", true, 'AGENT_DB', 0);
             return $this->db[$name] = false;
         }
     }
@@ -505,7 +506,8 @@ class Agent
     }
     /**
      * return module instance
-     * @param  array $module 
+     * @param  array $module
+     * @param  bool  $tryopen 
      * @return object|false|null  false...already open but no instance / null...open yet
      */
     public function getModule($module, $tryopen = false)
@@ -546,9 +548,10 @@ class Agent
      * @todo add basic variable  date. time etc
      * @return void
      */
-    protected function globalModuleInit(){
-        $this->setVariable('_GET', $_GET ,'GLOBAL');
-        $this->setVariable('_POST', $_POST ,'GLOBAL');
+    protected function globalModuleInit()
+    {
+        $this->setVariable('_GET', $_GET , 'GLOBAL');
+        $this->setVariable('_POST', $_POST , 'GLOBAL');
     }
     /**
      * refresh module
@@ -573,9 +576,9 @@ class Agent
      */
     public function getModuleNameByClass($class)
     {
-        if (is_string($class) && strpos($class, "Module_")==0) {
-            $class_array = explode("\\",$class);
-            return str_replace("Module_","",$class_array[0]);
+        if (is_string($class) && strpos($class, "Module_") == 0) {
+            $class_array = explode("\\", $class);
+            return str_replace("Module_", "", $class_array[0]);
         } else {
             return false;
         }
@@ -622,7 +625,7 @@ class Agent
         $methods[] = strtolower($kind).'_'.strtolower($name);
         // First, search module method
         if (is_object($md)) {
-            foreach($methods as $method){
+            foreach($methods as $method) {
                 if (is_callable(array($md, $method))) {
                     $this->log(E_NOTICE, "Call Module_{$module}\\Module->{$method}()", true, $module);
                     return $md->$method($params);
@@ -659,10 +662,10 @@ class Agent
                     return $instance($params);
                 }
             }
-            $this->log(E_ERROR,"{$kind} Not found method. {$classname}::{$methods[0]}() or {$methods[1]}()", true, $module);
+            $this->log(E_ERROR, "{$kind} Not found method. {$classname}::{$methods[0]}() or {$methods[1]}()", true, $module);
             return $default;
         }
-        $this->log(E_ERROR,"{$kind} Not Found class {$module} or {$classname}::{$methods[0]} or {$methods[1]}", true, $module);
+        $this->log(E_ERROR, "{$kind} Not Found class {$module} or {$classname}::{$methods[0]} or {$methods[1]}", true, $module);
         return $default;
     }
     /**
@@ -680,12 +683,12 @@ class Agent
 
         foreach($directories as $directory) {
             if (($source = $this->readFile($directory.$filename)) !== false) {
-                $this->log(E_NOTICE,"Read Template {$name}:({$filename})", true, $module);
+                $this->log(E_NOTICE, "Read Template {$name}:({$filename})", true, $module);
                 return $source;
             }
         }
 
-        $this->log(E_ERROR,"Can not load template:".$filename, true, $module);
+        $this->log(E_ERROR, "Can not load template:".$filename, true, $module);
         return false;
     }
     // buffer ----------------------------------------------------------------------------
@@ -738,9 +741,9 @@ class Agent
         if ($this->configs['debug']) {
             $e = error_get_last();
             if (! is_null($e)) {
-                $this->log($e['type'],"{$e['message']} in {$e['file']} ({$e['line']})",false,'PHP');
+                $this->log($e['type'], "{$e['message']} in {$e['file']} ({$e['line']})", false, 'PHP');
 
-                if ($e[type]==E_ERROR) {
+                if ($e[type] == E_ERROR) {
                     $ob   = $str;
                     $str  = $this->getBuffer();
                     $str .= "<hr>".$ob;
@@ -781,6 +784,7 @@ class Agent
     /**
      * Fetch from file 
      * @param  string $filename 
+     * @param  object $resource  if null, create new ParseResource object
      * @return string|false
      */
     public function fileFetch($filename, ParseResource $resource = null)
@@ -801,7 +805,7 @@ class Agent
         if (is_readable($filename) &&  ($source = file_get_contents($filename)) !== false) {
             return $source;
         }
-        $this->log(E_WARNING,'readFile() not found filename:'.$filename, true, 'AGENT');
+        $this->log(E_WARNING, 'readFile() not found filename:'.$filename, true, 'AGENT');
         return false;
     }
     /**
@@ -809,19 +813,20 @@ class Agent
      * @param string $source 
      * @return string
      */
-    public function fetch($source){
+    public function fetch($source)
+    {
         $this->line = 0;
         $resource = new ParseResource();
         $this->openModule('GLOBAL');
         $this->line = 1;
-        $this->log(E_NOTICE,'---------- PRE PROCESS [up to here]----------', true, $resource->module);
+        $this->log(E_NOTICE, '---------- PRE PROCESS [up to here]----------', true, $resource->module);
 
         $tag = $this->getConfig("agent_tag"); // default ag
         $this->tagPattern = "/<".$tag."\s*((?:[^'\">]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*')*?)\s*>((?:(?>[^<]+)|<(?!(".$tag."|\/".$tag.")(>|\s))|(?R))*)<\/".$tag.">/is";
         $this->recursiveFetch($source, $resource, true);
 
     // post-process global fetch
-        $this->log(E_NOTICE,'---------- POST PROCESS [from here]----------', true, $resource->module);
+        $this->log(E_NOTICE, '---------- POST PROCESS [from here]----------', true, $resource->module);
         // all module close sequence
         $modules = array_reverse($this->modules);
         $this->closeAllModule(array_keys($modules));
@@ -832,6 +837,7 @@ class Agent
      * recursive fetch tag parse . Retrieve nested 'agent tag' by recursive call.
      * @param  string $source
      * @param  object $resource
+     * @param  bool   $first if true, not variable parse outside tag.
      * @return mixed string|void
      */
     protected function recursiveFetch($source, ParseResource $resource, $first = false)
@@ -869,7 +875,7 @@ class Agent
 
             if (preg_match('/^[ \t]*\r?\n/', $inResource->inTag)) {
                 $last = strrpos($before, "\n");
-                $search = ($last===false) ? $before : substr($before, $last+1);
+                $search = ($last === false) ? $before : substr($before, $last+1);
                 if (preg_match('/^[ \t]*$/', $search)) {
                     $before = rtrim($before, " \t");
                     $inResource->inTag = preg_replace('/^[ \t]*\r?\n/', '' , $inResource->inTag, 1, $inResource->trimLineTag);
@@ -877,7 +883,7 @@ class Agent
             }
             if (preg_match('/^[ \t]*\r?\n/', $source)) {
                 $last = strrpos($inResource->inTag, "\n");
-                $search = ($last===false) ? $inResource->inTag : substr($inResource->inTag, $last+1);
+                $search = ($last === false) ? $inResource->inTag : substr($inResource->inTag, $last+1);
                 if (preg_match('/^[ \t]*$/', $search)) {
                     $inResource->inTag  = rtrim($inResource->inTag, " \t");
                     $source = preg_replace('/^[ \t]*\r?\n/', '', $source, 1, $trimLineSorce);
@@ -910,7 +916,7 @@ class Agent
             } else {
                 // parse = no
                 $inResource->buffer->buffer($inResource->inTag);
-                $this->log(E_NOTICE,'Parse: No', true, $resource->module);
+                $this->log(E_NOTICE, 'Parse: No', true, $resource->module);
             }
             $this->line = $matchLine;
 
@@ -932,8 +938,10 @@ class Agent
     }
     /**
      * attribute 'Debug' process
+     * @access protected
+     * @param string $value
      * @param object $attrs
-     * @param object $resource 
+     * @param object $inResource
      * @return void
      */
     protected function attrDebug($value, $attrs, $inResource)
@@ -942,31 +950,37 @@ class Agent
     }
     /**
      * attribute 'Header' process
+     * @access protected
+     * @param string $value
      * @param object $attrs
-     * @param object $resource 
+     * @param object $inResource
      * @return void
      */
     protected function attrHeader($value, $attrs, $inResource)
     {
         $header = $this->httpHeaderManager->header($value);
-        $this->log(E_NOTICE,"header({$header})",true,'AGENT');
+        $this->log(E_NOTICE, "header({$header})", true, 'AGENT');
         header($header);
     }
     /**
      * attribute 'Store' process
+     * @access protected
+     * @param string $value
      * @param object $attrs
-     * @param object $resource 
+     * @param object $inResource
      * @return void
      */
     protected function attrStore($value, $attrs, $inResource)
     {
         $inResource->setBuffer($this->createBuffer($value));
-        $this->log(E_NOTICE,"Store: {$value}", true, 'AGENT');
+        $this->log(E_NOTICE, "Store: {$value}", true, 'AGENT');
     }
     /**
      * attribute 'Module' process
+     * @access protected
+     * @param string $value
      * @param object $attrs
-     * @param object $resource 
+     * @param object $inResource
      * @return void
      */
     protected function attrModule($value, $attrs, $inResource)
@@ -976,8 +990,10 @@ class Agent
     }
     /**
      * attribute 'Reopen' process
+     * @access protected
+     * @param string $value
      * @param object $attrs
-     * @param object $resource 
+     * @param object $inResource
      * @return void
      */
     protected function attrReopen($value, $attrs, $inResource)
@@ -988,8 +1004,10 @@ class Agent
     }
     /**
      * attribute 'Close' process
+     * @access protected
+     * @param string $value
      * @param object $attrs
-     * @param object $resource 
+     * @param object $inResource
      * @return void
      */
     public function attrClose($value, $attrs, $inResource)
@@ -998,8 +1016,10 @@ class Agent
     }
     /**
      * attribute 'Refresh' process
+     * @access protected
+     * @param string $value
      * @param object $attrs
-     * @param object $resource 
+     * @param object $inResource
      * @return void
      */
     protected function attrRefresh($value, $attrs, $inResource)
@@ -1010,8 +1030,10 @@ class Agent
     }
     /**
      * attribute 'Pull' process
+     * @access protected
+     * @param string $value
      * @param object $attrs
-     * @param object $resource 
+     * @param object $inResource
      * @return void
      */
     protected function attrPull($value, $attrs, $inResource)
@@ -1020,8 +1042,10 @@ class Agent
     }
     /**
      * attribute 'Loop' process
+     * @access protected
+     * @param string $value
      * @param object $attrs
-     * @param object $resource 
+     * @param object $inResource
      * @return void
      */
     protected function attrLoop($value, $attrs, $inResource)
@@ -1030,76 +1054,97 @@ class Agent
     }
     /**
      * attribute 'Template' process
+     * @access protected
+     * @param string $value
      * @param object $attrs
-     * @param object $resource 
+     * @param object $inResource
      * @return void
      */
     protected function attrTemplate($value, $attrs, $inResource)
     {
-        if ( ($content = $this->getTemplate($value, $inResource->module))!==false) {
+        if ( ($content = $this->getTemplate($value, $inResource->module)) !== false) {
             $inResource->inTag = $content; // replace inTag to template
         }
     }
     /**
      * attribute 'Read' process
+     * @access protected
+     * @param string $value
      * @param object $attrs
-     * @param object $resource 
+     * @param object $inResource
      * @return void
      */
     protected function attrRead($value, $attrs, $inResource)
     {
-        if ( ($content = $this->readFile($value, $inResource->module))!==false) {
+        if ( ($content = $this->readFile($value, $inResource->module)) !== false) {
             $inResource->inTag = $content; // replace inTag to file content.
         }
     }
     /**
      * attribute 'Restore' process
+     * @access protected
+     * @param string $value
      * @param object $attrs
-     * @param object $resource 
+     * @param object $inResource
      * @return void
      */
     protected function attrRestore($value, $attrs, $inResource)
     {
         if (! is_null($buffer = $this->getBuffer($value))) {
             $inResource->inTag = (string) $buffer;
-            $this->log(E_NOTICE,"Restore: {$value}", true, 'AGENT');
+            $this->log(E_NOTICE, "Restore: {$value}", true, 'AGENT');
         } else {
-            $this->log(E_WARNING,"Restore: {$value} Not Found Buffer", true, 'AGENT');
+            $this->log(E_WARNING, "Restore: {$value} Not Found Buffer", true, 'AGENT');
         }
     }
     /**
      * attribute 'Trim' process
+     * @access protected
+     * @param string $value
      * @param object $attrs
-     * @param object $resource 
+     * @param object $inResource
      * @return void
      */
     protected function attrTrim($value, $attrs, $inResource)
     {
         if (Utility::boolStr($value, false)) {
             preg_match('/^\s*/', $inResource->inTag, $trimMatch);
-            $inResource->trimLineTag += substr_count($trimMatch[0],"\n");
+            $inResource->trimLineTag += substr_count($trimMatch[0], "\n");
             $inResource->inTag = preg_replace('/(^\s*|\s*$)/', '', $inResource->inTag);
         }
     }
     /**
      * attribute 'Check' process
+     * @access protected
+     * @param string $value
      * @param object $attrs
-     * @param object $resource 
+     * @param object $inResource
      * @return void
      */
-    public function attrCheck($value, $attrs, $inResource)
+    protected function attrCheck($value, $attrs, $inResource)
     {
-        if (Utility::boolStr($value, false)) {
-            $this->checkResourceLog($inResource);
+        if (Utility::boolStr($value, false) && $this->configs['debug']) {
+            $module = $inResource->module;
+            $check  = "<ul>";
+            $check .= " <li>Pull variables\n".ExpandVariable::expand($inResource->pullVars)."</li>";
+            $check .= " <li>Loop variables\n".ExpandVariable::expand($inResource->inLoopVarsList)."</li>";
+            $check .= " <li>{$module} Module variables\n".ExpandVariable::expand($this->getVariable(null, $module))."</li>";
+            if ($module !== 'GLOBAL') {
+                $check .= " <li>GLOBAL Module variables\n".ExpandVariable::expand($this->getVariable(null, 'GLOBAL'))."</li>";
+            }
+            $check .= "</ul>";
+            $this->log(E_DEPRECATED, $check, false, $module);
         }
     }
     /**
      * attribute 'Parse' process
+     * @access protected
+     * @param string $value
      * @param object $attrs
-     * @param object $resource 
+     * @param object $inResource
      * @return void
      */
-    public function attrParse($value, $attrs, $inResource)
+    protected function attrParse($value, $attrs, $inResource)
     {
         $inResource->parse = Utility::boolStr($value, true);
     }
@@ -1116,10 +1161,12 @@ class Agent
         return false;
     }
     /**
-     * log
+     * logging
      * @param  integer|string $level
      * @param  string $message
+     * @param  bool   $escape  true...htmlspecialchar() false...raw ouput
      * @param  string $module 
+     * @param  int    $callbak 
      * @return void
      */
     public function log($level, $message, $escape = true, $module = "", $callerback = null)
@@ -1133,21 +1180,6 @@ class Agent
                 }
             }
             $this->logger->log($level, $message, $escape, $module);
-        }
-    }
-    public function checkResourceLog(ParseResource $resource)
-    {
-        if ($this->configs['debug']) {
-            $module = $resource->module;
-            $check  = "<ul>";
-            $check .= " <li>Pull variables\n".ExpandVariable::expand($resource->pullVars)."</li>";
-            $check .= " <li>Loop variables\n".ExpandVariable::expand($resource->inLoopVarsList)."</li>";
-            $check .= " <li>{$module} Module variables\n".ExpandVariable::expand($this->getVariable(null, $module))."</li>";
-            if ($module !== 'GLOBAL') {
-                $check .= " <li>GLOBAL Module variables\n".ExpandVariable::expand($this->getVariable(null, 'GLOBAL'))."</li>";
-            }
-            $check .= "</ul>";
-            $this->log(E_DEPRECATED, $check, false, $module);
         }
     }
 

@@ -1,10 +1,13 @@
 <?php
 /**
- * Expand variable, part of Tagent
- * @package Tagent
+ * ExpandVariable class, part of Tagent
  */
 namespace Tagent;
-
+/**
+ * Output html report for attribute 'check'
+ * static method 
+ * @package Tagent
+ */
 class ExpandVariable
 {
     // const for css
@@ -87,7 +90,7 @@ STYLE;
             $output .= "  <td colspan=2>[empty]</td>\n";
             $output .= " </tr>\n";
         }
-        foreach ($var as $key=>$value ) {
+        foreach ($var as $key => $value ) {
             $output .= " <tr>\n";
             $output .= "  <td class=".self::CSS_CLASS_KEY.">".htmlspecialchars($key)."</td>\n";
             $output .= "  <td>".self::expand($value)."</td>\n";

@@ -1,11 +1,12 @@
 <?php
 /**
- * Filter Manager, part of Tagent
- * Filter contenaire, registor, excute 
- * @package Tagent
+ * FilterManager, part of Tagent
  */
 namespace Tagent;
-
+/**
+ * Filter contenaire and operatopn, registor, excute 
+ * @package Tagent
+ */
 class FilterManager 
 {
     /**
@@ -13,7 +14,7 @@ class FilterManager
      */
     protected $filters = array();
     /**
-     * @var string 
+     * @var string Finaly regular expression pattern for variable parse filter part.
      */
     public $pattern = '';
     /**
@@ -75,9 +76,9 @@ class FilterManager
     }
     /**
      * add filter object
-     * @param name $name 
-     * @param short $short 
-     * @param mixed callable $callable 
+     * @param string $name 
+     * @param string $short 
+     * @param mixed $callable filter callable
      * @return void
      */
     public function addFilter($name, $short, callable $callable)
@@ -104,7 +105,7 @@ class FilterManager
         foreach($lens as $key => &$len) {
             $sorted[] = $patterns[$key];
         }
-        return $this->pattern = implode('|',$sorted);
+        return $this->pattern = implode('|', $sorted);
     }
     /**
      * execute filter 

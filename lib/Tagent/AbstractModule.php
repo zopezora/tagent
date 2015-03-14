@@ -1,21 +1,21 @@
 <?php
 /**
- * abstract Module, part of Tagent
- * access to module variable and object locator
- * for Module classes and classes belonging to a module
+ * AbstractModule class, Tagent
+ */
+namespace Tagent;
+/**
+ * Access to module variable/object, and log
  * @abstract
  * @package Tagent
  */
-namespace Tagent;
-
-use Tagent\Agent;
-
 abstract class AbstractModule
 {
     // --- Module Variable --------------------------------- 
     /**
      * get module variable
-     * @param  string $key 
+     * @param  string $key
+     * @param  string $modulename default null then set by namespace of this class.
+     * @param  int    $bk         default 1, for log report backtrack.
      * @return mixed
      */
     final public function getVariable($key = null, $modulename = null, $bk = 1)
@@ -29,6 +29,8 @@ abstract class AbstractModule
      * set module variable
      * @param string $key 
      * @param mixed  $value 
+     * @param  string $modulename default null then set by namespace of this class.
+     * @param  int    $bk         default 1, for log report backtrack.
      * @return void
      */
     final public function setVariable($key, $value, $modulename = null, $bk = 1)
@@ -42,8 +44,8 @@ abstract class AbstractModule
     /**
      * set module variable by array.  always override
      * @param  array  $array 
-     * @param  string $modulename 
-     * @param  int    $bk
+     * @param  string $modulename default null then set by namespace of this class.
+     * @param  int    $bk         default 1, for log report backtrack.
      * @return void
      */
     final public function setVariablesByArray(array $array, $modulename = null, $bk = 1)
@@ -56,53 +58,54 @@ abstract class AbstractModule
 
     // ---- Module object locator -----------------------------
     /**
-     * get
+     * Get an object from object locator
      * @param  string $name 
-     * @param  string $modulename 
-     * @param  int    $bk
+     * @param  string $modulename default null then set by namespace of this class.
+     * @param  int    $bk         default 1, for log report backtrack.
      * @return object|null
      */
     final public function get($name , $modulename = null, $bk = 1)
     {
-        if (! isset($modulename)){
+        if (! isset($modulename)) {
             $modulename = Agent::self()->getModuleNameByClass(get_class($this));
         }
         return Agent::self()->get($name, $modulename, $bk);
     }
     /**
-     * set object
-     * @param string $name 
-     * @param object $object   if null , unset Object
-     * @param string $modulename
-     * @param int    $bk
+     * Set an object to the object locator.
+     * @param string $name   Name for call (case-sensitive)
+     * @param object $object Object that is set. If null, unset Object
+     * @param  string $modulename Default set by namespace of this class.
+     * @param  int    $bk         Default 1, for log report backtrack.
      * @return void
      */
     final public function set($name, $object, $modulename = null, $bk =1)
     {
-        if (! isset($modulename)){
+        if (! isset($modulename)) {
             $modulename = Agent::self()->getModuleNameByClass(get_class($this));
         }
         Agent::self()->set($name, $object, $modulename, $bk);
     }
     /**
-     * has object
+     * To verify that it exists a name to the object locator.
      * @param string $name 
-     * @param string $modulename
-     * @param int    $bk
+     * @param  string $modulename default null then set by namespace of this class.
+     * @param  int    $bk         default 1, for log report backtrack.
      * @return bool  true|false
      */
     final public function has($name, $modulename = null, $bk = 1)
     {
-        if (! isset($modulename)){
+        if (! isset($modulename)) {
             $modulename = Agent::self()->getModuleNameByClass(get_class($this));
         }
         return Agent::self()->has($name, $modulename, $bk);
     }
     /**
-     * log
+     * Logging
      * @param  integer|string $level 
      * @param  string $message
-     * @return bool  true|false
+     * @param  bool   $escape
+     * @return void
      */
     final public function log($level, $message, $escape = true)
     {

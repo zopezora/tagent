@@ -1,11 +1,12 @@
 <?php
 /**
- * Attribute, part of Tagent
+ * Attribute class, part of Tagent
+ */
+namespace Tagent;
+/**
  * tag parser, module control, Object locator
  * @package Tagent
  */
-namespace Tagent;
-
 class Attribute
 {
     // const pattern
@@ -13,21 +14,21 @@ class Attribute
     const ATTRIBUTE_PATTERN = "/(?:[^'\"\s]+|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*')+/";
     const VALID_PATTERN     = "/(?|(\w+)|(\[\w+\]))=([^'\"\s]+|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*')/";
     /**
-     * @var array
+     * @var array Parsed result of reserved attributes.
      */
     public $reserved = array();
     /**
-     * @var array
+     * @var array Parsed result of variable attributes.
      */
     public $appends = array();
     /**
-     * @var array
+     * @var array Parsed result of params attributes.
      */
     public $params = array();
     /**
      * construct
      * @param  string $source 
-     * @param  object ParseResource $resource 
+     * @param  object $resource ParseResource object
      * @return void
      */
     public function __construct($source, ParseResource $resource)
@@ -35,7 +36,7 @@ class Attribute
         if (preg_match_all(self::ATTRIBUTE_PATTERN, $source, $matches)) {
             foreach($matches[0] as &$v) {
                 // valid attribute
-                if (preg_match(self::VALID_PATTERN, $v, $sp_match)){
+                if (preg_match(self::VALID_PATTERN, $v, $sp_match)) {
                     $key   = $sp_match[1];   // foo or [foo]
                     $value = $sp_match[2];   // 'bar' or {@name}
 
@@ -45,11 +46,11 @@ class Attribute
                         // un quate value, try for fetch {@VARIABLE}
                         $value = $resource->varFetch($value, true);
                     }
-                    if ($key[0]=='[') {
-                        $key = substr($key, 1 ,-1);
+                    if ($key[0] == '[') {
+                        $key = substr($key, 1 , -1);
                         $this->appends[$key] = $value;
-                    } elseif (preg_match(self::RESERVED_PATTERN, $key, $attr_match)){
-                        $this->reserved[]= array($key, $value);
+                    } elseif (preg_match(self::RESERVED_PATTERN, $key, $attr_match)) {
+                        $this->reserved[] = array($key, $value);
                     } else {
                         $this->params[$key] = $value;
                     }

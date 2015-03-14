@@ -1,30 +1,32 @@
 <?php
 /**
- * Filter entry, part of Tagent
- * @package Tagent
+ * Filter class, part of Tagent
  */
 namespace Tagent;
-
+/**
+ * Filter entry object
+ * @package Tagent
+ */
 class Filter
 {
     /**
-     * @var string
+     * @var string filter name
      */
     protected $name = null;
     /**
-     * @var string
+     * @var string filter short name
      */
     protected $short = null;
     /**
-     * @var mixed callable
+     * @var mixed filter callable 
      */
     public    $callable = null;
     /**
-     * @var string
+     * @var string Regular expression pattern for filter
      */
     protected $pattern = null;
     /**
-     * @var array
+     * @var array Filter short name and name
      */
     protected $patterns = null;
     /**
@@ -42,7 +44,7 @@ class Filter
 
         $name  = Utility::removeDelimter($name);
         $short = Utility::removeDelimter($short);
-        $this->patterns = ($short=='') ? array($name) : array($short, $name ) ;
+        $this->patterns = ($short == '') ? array($name) : array($short, $name ) ;
         $this->pattern = "/^(".implode('|', $this->patterns).")$/";
     }
     /**

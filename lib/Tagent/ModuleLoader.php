@@ -1,16 +1,18 @@
 <?php
 /**
- * Module class loader, part of Tagent
- * namespace prefix '\Module_***\'
- * @package Tagent
+ * ModuleLoader class, part of Tagent
  */
 namespace Tagent;
-
+/**
+ * autoloader
+ * for namespace prefix '\Module_***\' class only
+ * @package Tagent
+ */
 class ModuleLoader
 {
     /**
      * @static
-     * @var object
+     * @var object self instance
      */
     public static $loader = null;
 
@@ -25,7 +27,7 @@ class ModuleLoader
      */
      public static function init($agentDirectory)
     {
-        if (! isset(self::$loader )){
+        if (! isset(self::$loader )) {
             self::$loader = new self($agentDirectory);
         }
         return self::$loader;

@@ -1,11 +1,12 @@
 <?php
 /**
- * HttpHeaderManager, part of Tagent
- * shortcut http header
- * @package Tagent
+ * HttpHeaderManager class, part of Tagent
  */
 namespace Tagent;
-
+/**
+ * HttpHeader object container and provide header string
+ * @package Tagent
+ */
 class HttpHeaderManager
 {
     /**
@@ -18,25 +19,26 @@ class HttpHeaderManager
     public $charset = '';
     /**
      * constructor
+     * @param string charset
      * @return void
      */
     public function __construct($charset = 'utf-8')
     {
         $this->charset = $charset;
         // text default
-        $names = array('plain','html','css');
+        $names = array('plain', 'html', 'css');
         foreach($names as $name) {
             $header = 'Content-Type: text/'.$name;
             $this->addHeader(new HttpHeader($name, $header, true));
         }
         // application
-        $names = array('javascript','json','xml');
+        $names = array('javascript', 'json', 'xml');
         foreach($names as $name) {
             $header = 'Content-Type: application/'.$name;
             $this->addHeader(new HttpHeader($name, $header, false));
         }
         // image
-        $names = array('jpeg','gif','png');
+        $names = array('jpeg', 'gif', 'png');
         foreach($names as $name) {
             $header = 'Content-Type: image/'.$name;
             $this->addHeader(new HttpHeader($name, $header, false));
@@ -44,8 +46,8 @@ class HttpHeaderManager
         $this->addHeader(new HttpHeader('svg', 'Content-Type: image/svg+xml', true));
     }
     /**
-     *  add header
-     * @param object HttpHeader $header 
+     * HttpHeader object registration
+     * @param object $header HttpHeader
      * @return void
      */
     public function addHeader(HttpHeader $header)
@@ -59,8 +61,8 @@ class HttpHeaderManager
         $this->headers[] = $header;
     }
     /**
-     * return header string , searching registered header
-     * @param string $header 
+     * Return header string , searching registered header
+     * @param string $name
      * @return string
      */
     public function header($name)
@@ -73,6 +75,11 @@ class HttpHeaderManager
         }
         return $name;
     }
+    /**
+     * set charset
+     * @param string $charset 
+     * @return void
+     */
     public function setCharset($charset)
     {
         $this->charset = $charset;

@@ -1,10 +1,12 @@
 <?php
 /**
- * Default filter, part of Tagent
- * @package Tagent
+ * DefaultFilter class, part of Tagent
  */
 namespace Tagent;
-
+/**
+ * Default filter register
+ * @package Tagent
+ */
 class DefaultFilter
 {
     /**

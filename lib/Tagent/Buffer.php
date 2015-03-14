@@ -1,13 +1,16 @@
 <?php
 /**
- * Buffer, part of Tagent
- * @package Tagent
+ * Buffer class, part of Tagent
  */
 namespace Tagent;
-
-class Buffer {
+/**
+ * Buffer conteneire
+ * @package Tagent
+ */
+class Buffer
+{
     /**
-     * @var string
+     * @var string buffer string
      */
     public $buffer = '';
     /**
@@ -33,7 +36,8 @@ class Buffer {
      * to string 
      * @return string
      */
-    public function __toString(){
+    public function __toString()
+    {
         return $this->buffer;
     }
 }

@@ -1,11 +1,12 @@
 <?php
 /**
- * Close module interface, part of Tagent
- * for Module classes.
- * @package Tagent
+ * CloseModule interface, part of Tagent
  */
 namespace Tagent;
-
+/**
+ * onClose for Module classes.
+ * @package Tagent
+ */
 interface CloseModuleInterface
 {
     /**

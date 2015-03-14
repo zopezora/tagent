@@ -1,10 +1,12 @@
 <?php
 /**
- * Logger, part of Tagent
- * @package Tagent
+ * Logger class, part of Tagent
  */
 namespace Tagent;
-
+/**
+ * Log container and logging
+ * @package Tagent
+ */
 class Logger
 {
     // const for css
@@ -66,11 +68,11 @@ class Logger
 STYLE;
 
     /**
-     * @var array
+     * @var array log entry container
      */
     protected $logs = array();
     /**
-     * @var array
+     * @var array preset log level
      */
     protected $loglevel = array(
                                 E_ERROR      => 'ERROR',     // 1
@@ -83,13 +85,14 @@ STYLE;
      * write log
      * @param  integer|string $level
      * @param  string $message
+     * @param  bool   $escape   if true , when reporting, output using htmlspecialchar(). if false, raw output.
      * @param  string $module 
      * @return void
      */
-    public function log($level, $message, $escape = false, $module = "")
+    public function log($level, $message, $escape = true, $module = "")
     {
         $agent = Agent::self();
-        if (! $agent->debug()){
+        if (! $agent->debug()) {
             return false;
         }
         // $level 1.ERROR 2.WARNING 4.PARSE 8.NOTICE 8192 (CHECK)E_DEPRECATED 
@@ -138,7 +141,7 @@ STYLE;
             $output .= "  <th>MODULE</th>";
             $output .= "  <th>MESSAGE</th>";
             $output .= " </tr>\n";
-            foreach($this->logs as $log){
+            foreach($this->logs as $log) {
                 if ($log['level'] & $agent->log_reporting()) {
                     if (isset($this->loglevel[$log['level']])) {
                         $cssclass = constant("self::CSS_CLASS_{$this->loglevel[$log['level']]}");

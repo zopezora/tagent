@@ -1,11 +1,12 @@
 <?php
 /**
- * Refresh module interface, part of Tagent
- * for Module classes.
- * @package Tagent
+ * RefreshModule interface, part of Tagent
  */
 namespace Tagent;
-
+/**
+ * onRefresh for Module classes.
+ * @package Tagent
+ */
 interface RefreshModuleInterface
 {
     /**

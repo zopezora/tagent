@@ -1,10 +1,12 @@
 <?php
 /**
  * Factory Interface, part of Tagent
- * @package Tagent
  */
  namespace Tagent;
-
+/**
+ * factory method for object locator 
+ * @package Tagent
+ */
 interface FactoryInterface
 {
     /**
