@@ -12,7 +12,7 @@ class Attribute
     // const pattern
     const RESERVED_PATTERN  = "/^(Module|Pull|Loop|Read|Trim|Parse|Close|Check|Debug|Store|Header|Reopen|Restore|Refresh|Template)$/";
     const ATTRIBUTE_PATTERN = "/(?:[^'\"\s]+|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*')+/";
-    const VALID_PATTERN     = "/(?|(\w+)|(\[\w+\]))=([^'\"\s]+|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*')/";
+    const VALID_PATTERN     = "/(?|(\w+)|(\[\w+\]))=((?:[^'\"\s]+|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*')+)/";
     /**
      * @var array Parsed result of reserved attributes.
      */
