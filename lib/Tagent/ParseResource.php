@@ -10,7 +10,7 @@ namespace Tagent;
 class ParseResource
 {
     // const pattern
-    const VARIABLE_SCOPES = '[lmg]';
+    const VARIABLE_SCOPES = '[plmg]';
     /**
      * @var string current module name 
      */
@@ -138,8 +138,9 @@ class ParseResource
             $var = null;
             switch ($scope) {
                 case '':
+                case 'p':
                     $var = Utility::getValueByDeepkey($key_array, $this->pullVars);
-                    if (isset($var)) {
+                    if (isset($var) || $scope == 'p' ) {
                         break;
                     } // else no break
                 case 'l':
@@ -148,12 +149,12 @@ class ParseResource
                     } else {
                         $var = Utility::getValueByDeepkey($key_array, $this->loopVars);
                     }
-                    if (isset($var) || $scope == "l") { 
+                    if (isset($var) || $scope == 'l') { 
                         break;
                     } // else no break
                 case 'm':
                     $var = Utility::getValueByDeepkey($key_array, $agent->getVariable(null, $this->module));
-                    if (isset($var) || $scope == "m" || $this->module == 'GLOBAL') {
+                    if (isset($var) || $scope == 'm' || $this->module == 'GLOBAL') {
                         break;
                     } // else no break
                 case 'g':
@@ -163,7 +164,7 @@ class ParseResource
             if (isset($var)) {
                 //filter
                 if ($filterString) {
-                    preg_match_all("/\|(".$filterPattern.")/", $filterString, $filterMatch);
+                    preg_match_all('/\|('.$filterPattern.')/', $filterString, $filterMatch);
                     $filters = $filterMatch[1];
                 } else {
                     $filters = ($return) ? array(): array('h');
