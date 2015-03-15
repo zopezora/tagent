@@ -45,9 +45,11 @@ option scope, index, filter
 {@foo}           Scope full(search order Pull,Loop,Currnet module,Global module)
 {@m:foo}         Scope module
 {foo|raw}        Filter raw
-{@foo[bar]}      Literal index 'bar'.   without quotation. index [\w]+ only  
-{@foo['b-a-r']}  Literal index 'b-a-r'  with quotation. both valid '',""  
+{@foo['bar']}    Literal index 'bar'  with quotation. both valid '',""  
+{@foo[bar]}      Not recommend. Literal index 'bar'  without quotation. index [\w]+ only.  
 ```
+
+Un-quoated literal index is not recomend. because little slow for parsing.
 
 1. In the content. with bracket{}  
 
@@ -61,7 +63,7 @@ option scope, index, filter
 2. In the attribute value or variable index.  without bracket{}  
 
 ```html
-    <ag foo=@bar></ag>    Attribute value @bar of `ag tag`.
+    <ag foo=@bar ></ag>    Attribute value @bar of `ag tag`.
     {@foo[@bar]}          Index variable @bar.
 ```
 
