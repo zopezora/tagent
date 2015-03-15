@@ -7,7 +7,6 @@
 <ag ATTRIBUTE=VALUE></ag>
 ```
 
-
 #####Reserved attributes
 `Module`,`Pull`,`Loop`,`Parse`,`Close`,`Refresh`,`Reopen`,`Template`,`Check`,`Debug`,`Header`,`Read`,`Trim`,`Store`,`Restore`  
 
@@ -17,15 +16,13 @@ The first letter of reserved attribute name is upper-case.
 (Recommend) The first letter of the user attributes name are lower-case so as not to name collision.  
 The user attributes are used as a properties array $params  (see `Module`, `Pull`, `Loop` and `Refresh`.)  
 
-
-
 ```text
 <ag Module='Foo'></ag>    // single-quotation attribute value
 <ag Module="Foo"></ag>    // double-quotation attribute value
 <ag Module=Foo></ag>      // non-quoatation attribute value
 
 <!-- variable value  -->
-<ag Module='Foo' bar={@var}></ag>  // variable attribute value
+<ag Module='Foo' bar=@var></ag>  // variable attribute value
 
 <!-- escape quotation mark -->
 <ag Module='Foo' bar='It\'s cool'></ag>  // escaped single quotation inside single-quotation
@@ -39,18 +36,47 @@ The user attributes are used as a properties array $params  (see `Module`, `Pull
 ####Variable
 
 ```text
-{@scope:name|filter}
-   ex.{@foo}, {@m:foo}, {@foo|r},  {@g:foo|json}
-      {@foo|url|html} Specifies the multiple filters. Apply from left to right.
+{@scope:name[index][...]|filter|...}
+```
+
+option scope, index, filter
+
+```
+{@foo}           Scope full(search order Pull,Loop,Currnet module,Global module)
+{@m:foo}         Scope module
+{foo|raw}        Filter raw
+{@foo[bar]}      Literal index 'bar'.   without quotation. index [\w]+ only  
+{@foo['b-a-r']}  Literal index 'b-a-r'  with quotation. both valid '',""  
+```
+
+1. In the content. with bracket{}  
+
+```html
+  <ag>
+    {@foo}, {@m:foo}, {@foo|r},  {@g:foo|json}
+    {@foo|url|html} Multiple filters. Apply from left to right.
+  </ag>
+```
+
+2. In the attribute value or variable index.  without bracket{}  
+
+```html
+    <ag foo=@bar></ag>    Attribute value @bar of `ag tag`.
+    {@foo[@bar]}          Index variable @bar.
 ```
 
 #####Scope(option)  
+
+Variable scope , `Pull`, `Loop`, `Current module`, `Global module`.  
+
 ```
-(-- nothing --)   Pull scope   or scanning order  Pull, Loop, Current module, Global module  
-`l`   loop        Loop scope  
-`m`   module      Current module scope  
-`g`   global      Global module scope  
+(-- nothing --)   Scanning order  Pull, Loop, Current module, Global module  
+'p'               Pull scope  
+`l`               Loop scope  
+`m`               Current module scope  
+`g`               Global module scope  
 ```
+
 case-sensitive  
 
 #####Variable Name  
@@ -64,8 +90,8 @@ case-sensitive
 #####Filter(option)  
 
 ```text
-html   or h     (default)  htmlspecialchars( ENT_QUOTE,utf-8)  
-raw    or r         
+html   or h      htmlspecialchars( ENT_QUOTE, $charset)  config "charset" => 'utf-8'
+raw    or r      no filter  
 url    or u      urlencode()  
 json   or j      json_encode()  
 base64 or b      base64_encode()
@@ -73,6 +99,14 @@ f'format'        printf formatting  ex |f'%05d'
 +,-d,d,/,%,^,**  numeric operation  ex |+1|-2|*3|/4|%5|^6|**6   ^ or ** is  Exponentiation
 ```
 case-sensitive
+
+Default filter
+
+```html
+    <ag foo=@bar>    <!-- default non filter  -->
+      {@bar}         <!-- default html filter -->
+    </ag>
+```
 
 it's posible to add user defined filters.  
 

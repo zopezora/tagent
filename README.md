@@ -50,8 +50,8 @@ PHP template parser.
 
 ###Parse target
 
-* Tag ......... `<ag></ag>`  
-* Variable ... `{@VARIABLE}`  The inside of the `<ag></ag>` only
+* Tag ........ `<ag></ag>`  
+* Variable ... `{@VARIABLE}`  The inside of the `<ag></ag>` only  
 
 ####Tag
 
@@ -64,32 +64,40 @@ PHP template parser.
 `Module`,`Pull`,`Loop`,`Parse`,`Close`,`Refresh`,`Reopen`,`Template`,`Check`,`Debug`,`Header`,`Read`,`Trim`,`Store`,`Restore`  
 * case-sensitive.  First letter of reserved attribute are upper-case.  
 
-
 ####Variable
 
+1. with {}. In the content.   
+
 ```text
-{@scope:variable|filter}
+{@scope:variable[index]|filter}
+```
+
+2. without {}. In the attribute value or variable index bracket.[...].  
+
+```text
+<ag foo=@variable></ag>
+{@foo[@variable]}
 ```
 
 * scope:(optional)  
-`loop`/`l` , `module`/`m` , `global`/`g`  
+`p`...Pull, `l`...Loop, `m`...Current module , `g`...Global module  
 
 * filter:(optional)  
 `html`/`h` , `raw`/`r` ,`url`/`u` , `json`/`j` ,`base64`/`b`  
 printf filter  
 `f'format'`  ex. `f'%05d'`  
 arithmetic operation filter  
-`+`,`-`,`*`,`/`,`^`  ex. `+1`,`-2.3`  
+`+`,`-`,`*`,`/`,`^`,`**`    ex. `+1`,`-2.3`  
 
 It is possible to add user-defined filters.  
 
 - - - - - - -
 ###Document
 
-[Development memo](docs/Document.md)
+[Development memo](docs/Document.md)  
 
 - - - - - - -
 
 #####Todo now
 
-* Testing
+* Testing  
