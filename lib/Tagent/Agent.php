@@ -853,9 +853,6 @@ class Agent
             // $matches[1][0]   tag attribute
             // $matches[2][0]   inTag
 
-            // attribute parse
-            $attrs = new Attribute($matches[1][0], $resource); // $matches[1][0] <tag $attr></tag>
-
             $before = substr($source, 0, $matches[0][1]);
             $len   = strlen($matches[0][0]); // mattch <tag> to </tag>
             $source = substr($source, $matches[0][1] + $len);
@@ -864,8 +861,6 @@ class Agent
             $beforeLine = $this->line + substr_count($before, "\n");
             $matchLine  = $beforeLine + substr_count($matches[0][0], "\n"); // match <tag> to </tag>
 
-            // attribute parse
-            $attrs = new Attribute($matches[1][0], $resource);
             // resource
             $inResource = new ParseResource($resource);
             $inResource->inTag = $matches[2][0];
@@ -893,6 +888,9 @@ class Agent
             // varFetch before tag
             $inResource->$outputMethod($before);
             $this->line = $beforeLine;
+
+            // attribute parse
+            $attrs = new Attribute($matches[1][0], $resource); // $matches[1][0] <tag $attr></tag>
 
             // attribute process
             foreach ($attrs->reserved as $attr) {
