@@ -82,6 +82,16 @@ class DefaultFilter
         return (isset($str)) ? str_replace(' ', '&nbsp;', $str) : null;
     }
     /**
+     * trim filter
+     * @param string $str 
+     * @param string $name 
+     * @return mixed
+     */
+    public static function trimFilter($str, $name)
+    {
+        return (isset($str)) ? trim($str) : null;
+    }
+    /**
      * printf filter
      * '/f'.Utility::IN_QUOTE_PATTERN.'/'
      * @param string $str 
@@ -123,4 +133,13 @@ class DefaultFilter
         }
         return $str;
     }
+    public static function defaultFilter($str, $name)
+    {
+        if(is_null($str)) {
+            preg_match('/^d('.Utility::IN_QUOTE_PATTERN.')$/', $name, $match);
+            return Utility::removeQuote($match[1]);
+        }
+        return $str;
+    }
+
 }

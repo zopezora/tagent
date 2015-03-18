@@ -161,18 +161,17 @@ class ParseResource
                     $var = Utility::getValueByDeepkey($key_array, $agent->getVariable(null, 'GLOBAL'));
                     break;
             }
-            if (isset($var)) {
-                //filter
-                if ($filterString) {
-                    preg_match_all('/\|('.$filterPattern.')/', $filterString, $filterMatch);
-                    $filters = $filterMatch[1];
-                } else {
-                    $filters = ($return) ? array(): array('h');
-                }
-                foreach ($filters as $filter) {
-                    $var = $agent->filterManager->filter($var, $filter);
-                }
+            //filter
+            if ($filterString) {
+                preg_match_all('/\|('.$filterPattern.')/', $filterString, $filterMatch);
+                $filters = $filterMatch[1];
             } else {
+                $filters = ($return) ? array(): array('h');
+            }
+            foreach ($filters as $filter) {
+                $var = $agent->filterManager->filter($var, $filter);
+            }
+            if (! isset($var)) {
                 $agent->log(E_PARSE, 'Not Found Variable  '.$match, true, $this->module);
                 $var = $match;
             }

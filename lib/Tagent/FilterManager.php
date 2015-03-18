@@ -61,6 +61,16 @@ class FilterManager
                                       '',
                                        array($class, 'nbspFilter')
                                      );
+        // trim
+        $this->filters[] = new Filter('trim',
+                                      't',
+                                       array($class, 'trimFilter')
+                                     );
+        // default
+        $this->filters[] = new Filter('/d'.Utility::IN_QUOTE_PATTERN.'/',
+                                      '',
+                                       array($class, 'defaultFilter')
+                                     );
         // format by printf
         $this->filters[] = new Filter('/f'.Utility::IN_QUOTE_PATTERN.'/',
                                       '',
