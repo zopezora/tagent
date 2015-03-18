@@ -133,6 +133,12 @@ class DefaultFilter
         }
         return $str;
     }
+    /**
+     * defaultFilter
+     * @param string $str 
+     * @param string $name 
+     * @return string
+     */
     public static function defaultFilter($str, $name)
     {
         if(is_null($str)) {
