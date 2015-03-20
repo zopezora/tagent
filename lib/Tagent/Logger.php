@@ -17,23 +17,27 @@ class Logger
     const CSS_CLASS_NOTICE  = 'tagentLogNotice';
     const CSS_CLASS_CHECK   = 'tagentLogCheck';
     const CSS_CLASS_USER    = 'tagentLogUser';
+    const CSS_CLASS_HELP    = 'tagentLogHelp';
 
     const STYLE = <<<'STYLE'
 <style>
     div.tagentLog {
-        border: 1px solid #aaa;
+        border: 1px solid #888;
+        font-size : 100%;
+        margin : 0;
+        padding: 0;
     }
 
     table.tagentLog {
         border-collapse : collapse;
-        margin          : 1px;
+        margin          : 3px;
     }
     table.tagentLog th {
         background-color : #bbb;
-        border           : 1px solid #aaa;
+        border           : 1px solid #888;
     }
     table.tagentLog td {
-        border  : 1px solid #aaa;
+        border  : 1px solid #888;
         padding : 2px;
     }
 
@@ -54,6 +58,9 @@ class Logger
     }
     table.tagentLog tr.tagentLogUser {
         background-color : #cfc;
+    }
+    table.tagentLog tr.tagentLogHelp {
+        background-color : #8ea;
     }
     table.tagentLog td ul {
         margin  : 0 0 0 1em;
@@ -80,6 +87,7 @@ STYLE;
                                 E_PARSE      => 'PARSE',     // 4
                                 E_NOTICE     => 'NOTICE',    // 8
                                 E_DEPRECATED => 'CHECK',     // 8192
+                                E_STRICT     => 'HELP'       // 2048
                                );
     /**
      * write log
@@ -145,6 +153,12 @@ STYLE;
                 if ($log['level'] & $agent->log_reporting()) {
                     if (isset($this->loglevel[$log['level']])) {
                         $cssclass = constant("self::CSS_CLASS_{$this->loglevel[$log['level']]}");
+                        if ($log['level'] == E_DEPRECATED) {
+                            $checkflag = true;
+                        }
+                        if ($log['level'] == E_STRICT) {
+                            $helpflag = true;
+                        }
                     } else {
                         $cssclass = self::CSS_CLASS_USER;
                     }
@@ -155,7 +169,6 @@ STYLE;
                     if ($log['escape']) {
                         $output .= "  <td>".nl2br(htmlspecialchars($log['message']))."</td>\n";
                     } else {
-                        $checkflag = true;
                         $output .= "  <td>".$log['message']."</td>\n";
                     }
                     $output .= " </tr>\n";
@@ -168,6 +181,9 @@ STYLE;
         $output .= self::STYLE;
         if ($checkflag) {
             $output .= ExpandVariable::STYLE;
+        }
+        if ($helpflag) {
+            $output .= Help::STYLE;
         }
         return $output;
     }

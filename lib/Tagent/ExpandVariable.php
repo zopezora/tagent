@@ -42,6 +42,7 @@ class ExpandVariable
         background      : #7d7;
     }
 </style>
+
 STYLE;
 
     /**

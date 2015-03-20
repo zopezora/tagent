@@ -1124,11 +1124,19 @@ class Agent
         if (Utility::boolStr($value, false) && $this->configs['debug']) {
             $module = $inResource->module;
             $check  = "<ul>";
-            $check .= " <li>Pull variables\n".ExpandVariable::expand($inResource->pullVars)."</li>";
-            $check .= " <li>Loop variables\n".ExpandVariable::expand($inResource->inLoopVarsList)."</li>";
-            $check .= " <li>{$module} Module variables\n".ExpandVariable::expand($this->getVariable(null, $module))."</li>";
+            $check .= " <li class='ExpandTableHeading'>"
+                     ."Pull variables\n".ExpandVariable::expand($inResource->pullVars)
+                     ."</li>";
+            $check .= " <li class='ExpandTableHeading'>"
+                     ."Loop variables\n".ExpandVariable::expand($inResource->inLoopVarsList)
+                     ."</li>";
+            $check .= " <li class='ExpandTableHeading'>"
+                     ."{$module} Module variables\n".ExpandVariable::expand($this->getVariable(null, $module))
+                     ."</li>";
             if ($module !== 'GLOBAL') {
-                $check .= " <li>GLOBAL Module variables\n".ExpandVariable::expand($this->getVariable(null, 'GLOBAL'))."</li>";
+                $check .= " <li class='ExpandTableHeading'>"
+                         ."GLOBAL Module variables\n".ExpandVariable::expand($this->getVariable(null, 'GLOBAL'))
+                         ."</li>";
             }
             $check .= "</ul>";
             $this->log(E_DEPRECATED, $check, false, $module);
@@ -1144,7 +1152,21 @@ class Agent
      */
     protected function attrParse($value, $attrs, $inResource)
     {
-        $inResource->parse = Utility::boolStr($value, true);
+        if (Utility::boolStr($value, false) && $this->configs['debug']) {
+            $inResource->parse = Utility::boolStr($value, true);
+        }
+    }
+    /**
+     * attribute 'Help' process
+     * @access protected
+     * @param string $value
+     * @param object $attrs
+     * @param object $inResource
+     * @return void
+     */
+    protected function attrHelp($value, $attrs, $inResource)
+    {
+        new Help();
     }
     // Error for debug -------------------------------------------
     /**
