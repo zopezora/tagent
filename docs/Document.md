@@ -8,7 +8,7 @@
 ```
 
 #####Reserved attributes
-`Module`,`Pull`,`Loop`,`Parse`,`Close`,`Refresh`,`Reopen`,`Template`,`Check`,`Debug`,`Header`,`Read`,`Trim`,`Store`,`Restore`  
+`Module`,`Pull`,`Loop`,`Parse`,`Close`,`Refresh`,`Reopen`,`Template`,`Check`,`Debug`,`Header`,`Read`,`Trim`,`Store`,`Restore`,`Help`  
 
 Attributes name are case-sensitive.
 The first letter of reserved attribute name is upper-case.
@@ -99,6 +99,7 @@ json   or j      json_encode()
 base64 or b      base64_encode()
 f'format'        printf formatting  ex |f'%05d'  
 +,-d,d,/,%,^,**  numeric operation  ex |+1|-2|*3|/4|%5|^6|**6   ^ or ** is  Exponentiation
+d'value'         Default value .  if undifined variable,  output default value.
 ```
 case-sensitive
 

@@ -61,7 +61,7 @@ PHP template parser.
 
 #####Reserved attributes
 
-`Module`,`Pull`,`Loop`,`Parse`,`Close`,`Refresh`,`Reopen`,`Template`,`Check`,`Debug`,`Header`,`Read`,`Trim`,`Store`,`Restore`  
+`Module`,`Pull`,`Loop`,`Parse`,`Close`,`Refresh`,`Reopen`,`Template`,`Check`,`Debug`,`Header`,`Read`,`Trim`,`Store`,`Restore`,`Help`  
 * case-sensitive.  First letter of reserved attribute are upper-case.  
 
 ####Variable
@@ -88,6 +88,9 @@ printf filter
 `f'format'`  ex. `f'%05d'`  
 arithmetic operation filter  
 `+`,`-`,`*`,`/`,`^`,`**`    ex. `+1`,`-2.3`  
+Default filter
+`d'value'`  ex. `d'not found'`
+
 
 It is possible to add user-defined filters.  
 
