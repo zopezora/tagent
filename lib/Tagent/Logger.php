@@ -138,6 +138,7 @@ STYLE;
 
         $output  = "<div class='".self::CSS_CLASS."'>\n";
         $checkflag = false;
+        $helpflag = false;
 
         if (empty($this->logs)) {
             $output .= "No Report\n";
