@@ -1152,9 +1152,7 @@ class Agent
      */
     protected function attrParse($value, $attrs, $inResource)
     {
-        if (Utility::boolStr($value, false) && $this->configs['debug']) {
-            $inResource->parse = Utility::boolStr($value, true);
-        }
+        $inResource->parse = Utility::boolStr($value, true);
     }
     /**
      * attribute 'Help' process
