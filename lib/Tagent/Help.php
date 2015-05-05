@@ -3,6 +3,7 @@ namespace Tagent;
 
 class Help
 {
+    public $modules = array();
 
     const STYLE = <<<'STYLE'
 <style>
@@ -57,7 +58,7 @@ STYLE;
                         if ('Module_' === substr($entry,0,7)) {
                             $module = substr($entry, 7);
                             if ($module !== 'GLOBAL' ){
-                                $modules[] = array('name' => $module, 'path' => $path);
+                                $this->modules[] = array('name' => $module, 'path' => $path);
                             } else {
                                 $global = array('name' => $module, 'path' => $path);
                             }
@@ -67,9 +68,9 @@ STYLE;
             }
         }
         if ($global !== false) {
-            array_unshift($modules, $global);
+            array_unshift($this->modules, $global);
         }
-        foreach ($modules as $m) {
+        foreach ($this->modules as &$m) {
             // RefrectionMethodObject
             $pulls = array();
             $loops = array();
@@ -107,7 +108,21 @@ STYLE;
                 $loops   = array_merge($loops, $methods);
             }
 
+            $m['pulls'] = $pulls;
+            $m['loops'] = $loops;
+        } // end of foreach $modules
+    }
+
+    /**
+     * report html
+     * @return string
+     */
+    public function reportHtml(){
+        $output = '';
+
+        foreach ($this->modules as $m) {
             // Output for a module
+
             $output .= "<p class='HelpHeading'>\n";
             $output .= "Module:";
             $output .= ' <span class="HelpModule">'.$m['name']."</span>\n";
@@ -119,7 +134,7 @@ STYLE;
             $output .= " <tr>\n";
             $output .= "  <th colspan='3'>Pull</th>\n";
             $output .= " </tr>\n";
-            foreach ($pulls as $pull) {
+            foreach ($m['pulls'] as $pull) {
                 $output .= " <tr>\n";
                 $output .= '  <td class="HelpTableKey">'.$this->getAttrReport($pull).'</td>';
                 $output .= '  <td>'.$this->getMethodReport($pull).'</td>';
@@ -130,7 +145,7 @@ STYLE;
             $output .= " <tr>\n";
             $output .= "  <th colspan='3'>Loop</th>\n";
             $output .= " </tr>\n";
-            foreach ($loops as $loop) {
+            foreach ($m['loops'] as $loop) {
                 $output .= " <tr>\n";
                 $output .= '  <td class="HelpTableKey">'.$this->getAttrReport($loop).'</td>';
                 $output .= '  <td>'.$this->getMethodReport($loop).'</td>';
@@ -138,9 +153,8 @@ STYLE;
                 $output .= " </tr>\n";
             }
             $output .= '</table>';
-
         } // end of foreach $modules
-        $agent->log(E_STRICT, $output, false, 'AGENT');
+        return $output;
     }
     /**
      * Get Method Report from refrectinon method object

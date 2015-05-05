@@ -1164,7 +1164,10 @@ class Agent
      */
     protected function attrHelp($value, $attrs, $inResource)
     {
-        new Help();
+        $help = new Help();
+        $output = $help->reportHtml();
+        $this->log(E_STRICT, $output, false, 'AGENT');
+
     }
     // Error for debug -------------------------------------------
     /**
