@@ -114,15 +114,16 @@ STYLE;
     }
 
     /**
-     * report html
+     * Module report html
      * @return string
      */
-    public function reportHtml(){
+    public function reportHtml()
+    {
         $output = '';
+        $encoding = Agent::self()->getConfig('encoding');
 
         foreach ($this->modules as $m) {
             // Output for a module
-
             $output .= "<p class='HelpHeading'>\n";
             $output .= "Module:";
             $output .= ' <span class="HelpModule">'.$m['name']."</span>\n";
@@ -138,7 +139,9 @@ STYLE;
                 $output .= " <tr>\n";
                 $output .= '  <td class="HelpTableKey">'.$this->getAttrReport($pull).'</td>';
                 $output .= '  <td>'.$this->getMethodReport($pull).'</td>';
-                $output .= '  <td>'.$this->getAnotationReport($pull).'</td>';
+                $anotation = $this->getAnotationReport($pull, "\n");
+                $anotation  = nl2br(htmlspecialchars($anotation, ENT_QUOTES, $encoding));
+                $output .= '  <td>'.$anotation.'</td>';
                 $output .= " </tr>\n";
             }
 
@@ -149,11 +152,48 @@ STYLE;
                 $output .= " <tr>\n";
                 $output .= '  <td class="HelpTableKey">'.$this->getAttrReport($loop).'</td>';
                 $output .= '  <td>'.$this->getMethodReport($loop).'</td>';
-                $output .= '  <td>'.$this->getAnotationReport($loop).'</td>';
+                $anotation = $this->getAnotationReport($loop, "\n");
+                $anotation  = nl2br(htmlspecialchars($anotation, ENT_QUOTES, $encoding));
+                $output .= '  <td>'.$anotation.'</td>';
                 $output .= " </tr>\n";
             }
             $output .= '</table>';
         } // end of foreach $modules
+        return $output;
+    }
+    /**
+     * Module report plain
+     * @return string
+     */
+    public function reportPlain()
+    {
+        $output = '';
+        foreach ($this->modules as $m) {
+            $output .= "----------------------------------------------------------\n";
+            $output .= 'Module: '.$m['name'].'  ('.$m['path']."/)\n";
+            $output .= "  Pulls\n";
+            foreach ($m['pulls'] as $pull) {
+                $attr = $this->getAttrReport($pull);
+                $space = (strlen($attr)<20) ? str_repeat('.',20-strlen($attr)): '';
+                $output .= '    '.$attr.' '.$space.' ';
+                $output .= $this->getMethodReport($pull)."\n";
+                $anotation = trim($this->getAnotationReport($pull, "\n      "));
+                if ($anotation) {
+                    $output .= '       '.$anotation."\n";
+                }
+            }
+            $output .= "  Loops\n";
+            foreach ($m['loops'] as $loop) {
+                $attr = $this->getAttrReport($loop);
+                $space = (strlen($attr)<20) ? str_repeat('.',20-strlen($attr)): '';
+                $output .= '    '.$attr.' '.$space.' ';
+                $output .= $this->getMethodReport($loop)."\n";
+                $anotation = trim($this->getAnotationReport($loop, "\n      "));
+                if ($anotation) {
+                    $output .= '       '.$anotation."\n";
+                }
+            }
+        }
         return $output;
     }
     /**
@@ -202,15 +242,14 @@ STYLE;
      * @param object \ReflectionMethod $method 
      * @return string
      */
-    protected function getAnotationReport(\ReflectionMethod $method)
+    protected function getAnotationReport(\ReflectionMethod $method, $nl)
     {
         // get @tag note
         $pattern = "/^\s*\*(?!\/)(.*)$/m";
         preg_match_all($pattern, $method->getDocComment(), $matches, PREG_SET_ORDER);
         $docs = '';
-        $encoding = Agent::self()->getConfig('encoding');
         foreach ($matches as $match) {
-            $docs .= htmlspecialchars($match[1],ENT_QUOTES, $encoding)."<br />";
+            $docs .= $match[1].$nl;
         }
         return $docs;
     }
@@ -225,7 +264,6 @@ STYLE;
     protected function searchClassMethod($kind, $dir, $module, $sub = '') {
 
         $agent = Agent::self();
-
         $list = scandir($dir);
         $namespace = 'Module_'.$module."\\".$kind."s\\";
         $methods = array();
