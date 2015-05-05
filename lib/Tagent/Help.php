@@ -112,7 +112,6 @@ STYLE;
             $m['loops'] = $loops;
         } // end of foreach $modules
     }
-
     /**
      * Module report html
      * @return string
@@ -174,7 +173,7 @@ STYLE;
             $output .= "  Pulls\n";
             foreach ($m['pulls'] as $pull) {
                 $attr = $this->getAttrReport($pull);
-                $space = (strlen($attr)<20) ? str_repeat('.',20-strlen($attr)): '';
+                $space = (strlen($attr)<20) ? str_repeat('.', 20-strlen($attr)): '...';
                 $output .= '    '.$attr.' '.$space.' ';
                 $output .= $this->getMethodReport($pull)."\n";
                 $anotation = trim($this->getAnotationReport($pull, "\n      "));
@@ -185,7 +184,7 @@ STYLE;
             $output .= "  Loops\n";
             foreach ($m['loops'] as $loop) {
                 $attr = $this->getAttrReport($loop);
-                $space = (strlen($attr)<20) ? str_repeat('.',20-strlen($attr)): '';
+                $space = (strlen($attr)<20) ? str_repeat('.', 20-strlen($attr)): '...';
                 $output .= '    '.$attr.' '.$space.' ';
                 $output .= $this->getMethodReport($loop)."\n";
                 $anotation = trim($this->getAnotationReport($loop, "\n      "));
